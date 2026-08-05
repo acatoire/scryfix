@@ -14,7 +14,10 @@ database" that:
 - Users can "+1" or comment on existing reports instead of duplicating them.
 
 No custom backend is required — GitHub *is* the backend (auth, storage, review workflow, notifications, deduplication
-via PR search).
+via PR search). One caveat: GitHub's OAuth token endpoint (`github.com/login/oauth/access_token`, used by Device Flow
+polling too) has no CORS headers and doesn't support `OPTIONS`, so it can't be called directly from browser JS — a tiny
+stateless CORS-relay function is needed just to forward that one call (see §4.1, §7). It holds no secret and no
+session state, so this doesn't change the "no backend" nature of the app in any meaningful way.
 
 ---
 
@@ -52,8 +55,10 @@ via PR search).
         (data repo, reviewed by small team)
 ```
 
-No server component. Everything runs client-side; GitHub tokens are obtained via **Device Flow** (no client secret
-needed) and used directly from the browser to call the GitHub REST API.
+No server component to run/maintain (no database, no session state). GitHub tokens are obtained via **Device Flow** (no
+client secret needed); the code/token polling calls are relayed through a tiny stateless CORS-adding function (Cloudflare
+Worker or equivalent — see §4.1/§7) since GitHub's token endpoint rejects direct browser calls. Once obtained, the token
+is used directly from the browser to call the GitHub REST API (that part has normal CORS support).
 
 ---
 
@@ -90,7 +95,18 @@ needed) and used directly from the browser to call the GitHub REST API.
 
 ### 4.1 Auth
 
-- **GitHub OAuth Device Flow**, entirely client-side, no secret required.
+n- **GitHub OAuth Device Flow**, no client secret required.
+- **CORS relay needed for the token exchange**: `github.com/login/oauth/access_token` sends no
+  `Access-Control-Allow-Origin` header and doesn't support `OPTIONS`, so it flat-out rejects direct browser `fetch`/XHR
+  calls — confirmed by GitHub itself and widely reported
+  ([community discussion](https://github.com/orgs/community/discussions/169674),
+  [isaacs/github#330](https://github.com/isaacs/github/issues/330)). This blocks both the initial `device_code` request
+  and the polling request (same endpoint, `grant_type=...device_code`). Fix: a tiny stateless function (Cloudflare
+  Worker, Netlify/Vercel Function, etc.) that forwards the request and adds CORS headers — it holds no secret and no
+  state, purely a CORS pass-through. Cloudflare's docs ship an official ["CORS header proxy" Worker
+  example](https://developers.cloudflare.com/workers/) with a one-click deploy, which fits this exactly. Everything
+  else (the actual REST/GraphQL calls once a token is held) goes straight from the browser to `api.github.com`, which
+  does support CORS.
 - Scopes needed: `public_repo` (to fork/branch/commit/PR on a public repo).
 - Token kept in memory / sessionStorage only, never persisted long-term.
 - Onboarding screen explains "you need a free GitHub account" with a one-time short guide (screenshots) for MTG players
@@ -369,8 +385,23 @@ blank textarea.
 - Scryfall API calls: direct fetch, read-only, no auth needed.
 - GitHub API calls: REST (Contents API for commits, Search API for dedup, Issues/PRs API for comments/reactions), via
   Device Flow token.
+- **CORS relay** (see §4.1): one small function deployed separately from the SPA, only touched during token
+  acquisition. Cloudflare Workers is a good fit — free tier, no database, official "CORS header proxy" example to
+  start from.
 - Since it's a plain static build, your FTP host remains a valid fallback — no GitHub Pages-specific features are
-  required by the app itself.
+  required by the app itself, except the CORS relay which needs *some* place to run (any function host works, not
+  Cloudflare-specific).
+
+### 7.1 Starting points (not a Scryfix-specific template — none exists, compose from official pieces)
+
+- App scaffold: `npm create vite@latest scryfix -- --template react-ts` (official Vite template, no extra opinions to
+  strip out).
+- Pages deploy: Vite's documented GitHub Pages recipe using `actions/deploy-pages` (official Action).
+- GitHub API client: [`@octokit/rest`](https://github.com/octokit/rest.js).
+- Device Flow client: [`@octokit/auth-oauth-device`](https://github.com/octokit/auth-oauth-device.js) — handles the
+  polling loop; point its token-exchange requests at the CORS relay instead of `github.com` directly.
+- CORS relay starting point: Cloudflare's "CORS header proxy" Worker example (has a one-click "Deploy to Cloudflare"
+  button).
 
 ---
 

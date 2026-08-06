@@ -1,6 +1,8 @@
 // Minimal Scryfall API client: rate-limited fetch + URL parsing + search/lookup helpers.
 // https://scryfall.com/docs/api
 
+import { SCRYFALL_LANGUAGES } from '../data/scryfallLanguages'
+
 export interface ScryfallCard {
   id: string
   name: string
@@ -105,17 +107,26 @@ export interface ParsedScryfallUrl {
   lang?: string
 }
 
-const SCRYFALL_CARD_URL_RE =
-  /^https?:\/\/(?:www\.)?scryfall\.com\/card\/([a-z0-9]+)\/([^/?#]+)(?:\/([a-z]{2,3})(?:\/[^/?#]*)?)?\/?(?:[?#].*)?$/i
+// Canonical shape is /card/{set}/{number}(/{lang})?(/{slug})?(?query|#fragment)? — but Scryfall
+// omits the lang segment entirely for English printings, so a bare slug can immediately follow
+// the number (e.g. /card/woe/287/decadent-dragon-expensive-taste has no lang segment at all).
+// The only reliable way to tell a lang segment from a slug is to check it against the real list
+// of language codes, not just "2-3 lowercase letters" (a slug can coincidentally be that short).
+const SCRYFALL_CARD_URL_RE = /^https?:\/\/(?:www\.)?scryfall\.com\/card\/([a-z0-9]+)\/([^/?#]+)(\/[^?#]*)?(?:[?#].*)?$/i
+const SCRYFALL_LANGUAGE_CODES = new Set(SCRYFALL_LANGUAGES.map((lang) => lang.code))
 
 export function parseScryfallUrl(input: string): ParsedScryfallUrl | null {
   const match = SCRYFALL_CARD_URL_RE.exec(input.trim())
   if (!match) return null
-  const [, set, number, lang] = match
+  const [, set, number, rest] = match
+  const firstSegment = rest?.split('/').filter(Boolean)[0]
+  const lang = firstSegment && SCRYFALL_LANGUAGE_CODES.has(firstSegment.toLowerCase())
+    ? firstSegment.toLowerCase()
+    : undefined
   return {
     set: set.toLowerCase(),
     number: decodeURIComponent(number),
-    lang: lang?.toLowerCase(),
+    lang,
   }
 }
 

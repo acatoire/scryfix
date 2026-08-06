@@ -8,6 +8,7 @@ interface CardPreviewProps {
   onSelectPrint?: (card: ScryfallCard) => void
   onSelectLanguage?: (card: ScryfallCard) => void
   onClear?: () => void
+  onConfirm?: (card: ScryfallCard) => void
 }
 
 function CardPreview({
@@ -17,6 +18,7 @@ function CardPreview({
   onSelectPrint,
   onSelectLanguage,
   onClear,
+  onConfirm,
 }: CardPreviewProps) {
   const image = cardImageUris(card)
 
@@ -78,11 +80,18 @@ function CardPreview({
         <a href={card.scryfall_uri} target="_blank" rel="noreferrer">
           View on Scryfall
         </a>
-        {onClear && (
-          <button type="button" onClick={onClear}>
-            Look up a different card
-          </button>
-        )}
+        <div className="card-preview-actions">
+          {onConfirm && (
+            <button type="button" className="card-preview-confirm" onClick={() => onConfirm(card)}>
+              Report an issue with this printing
+            </button>
+          )}
+          {onClear && (
+            <button type="button" onClick={onClear}>
+              Look up a different card
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

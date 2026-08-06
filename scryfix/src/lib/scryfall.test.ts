@@ -75,6 +75,34 @@ describe('parseScryfallUrl', () => {
     })
   })
 
+  it('parses an English url whose slug directly follows the number, with no lang segment', () => {
+    // Scryfall omits the lang segment entirely for English printings.
+    expect(
+      parseScryfallUrl('https://scryfall.com/card/woe/287/decadent-dragon-expensive-taste'),
+    ).toEqual({ set: 'woe', number: '287', lang: undefined })
+  })
+
+  it('parses a lang segment followed by a slug', () => {
+    expect(
+      parseScryfallUrl('https://scryfall.com/card/10e/2/fr/ange-de-mis%C3%A9ricorde-(angel-of-mercy)'),
+    ).toEqual({ set: '10e', number: '2', lang: 'fr' })
+  })
+
+  it('does not mistake a short English slug for a lang code', () => {
+    // "fog" is 3 lowercase letters (same shape as a lang code) but isn't one.
+    expect(parseScryfallUrl('https://scryfall.com/card/tmp/61/fog')).toEqual({
+      set: 'tmp',
+      number: '61',
+      lang: undefined,
+    })
+  })
+
+  it('handles a slug with a trailing query string and no lang segment', () => {
+    expect(
+      parseScryfallUrl('https://scryfall.com/card/woe/287/decadent-dragon-expensive-taste?utm_source=api'),
+    ).toEqual({ set: 'woe', number: '287', lang: undefined })
+  })
+
   it('returns null for a non-Scryfall url', () => {
     expect(parseScryfallUrl('https://example.com/card/afc/183')).toBeNull()
   })

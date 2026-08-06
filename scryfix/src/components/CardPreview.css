@@ -66,6 +66,12 @@
     }
   }
 
+  .card-preview-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   button {
     align-self: flex-start;
     font-family: inherit;
@@ -80,5 +86,10 @@
     &:hover {
       box-shadow: var(--shadow);
     }
+  }
+
+  .card-preview-confirm {
+    color: var(--accent);
+    background: var(--accent-bg);
   }
 }

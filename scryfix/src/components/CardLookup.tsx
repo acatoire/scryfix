@@ -19,7 +19,11 @@ type Status =
   | { kind: 'results'; cards: ScryfallCard[] }
   | { kind: 'card'; card: ScryfallCard; prints: ScryfallCard[]; languages: ScryfallCard[] }
 
-function CardLookup() {
+interface CardLookupProps {
+  onCardConfirmed: (card: ScryfallCard) => void
+}
+
+function CardLookup({ onCardConfirmed }: CardLookupProps) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
@@ -124,6 +128,7 @@ function CardLookup() {
           onSelectPrint={selectPrint}
           onSelectLanguage={selectLanguage}
           onClear={reset}
+          onConfirm={onCardConfirmed}
         />
       )}
     </div>

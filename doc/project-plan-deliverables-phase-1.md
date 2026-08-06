@@ -4,13 +4,14 @@ Delivered and validated **one task at a time**, in this order — each step shou
 before moving to the next. Nothing in Phase 1 touches the GitHub API; the goal is to validate the wizard UX and report
 format on a live, deployed static site first.
 
-1. Project setup + React/Vite skeleton + GitHub Pages deployment.
-2. Card lookup + preview (via Scryfall API, URL-paste and search).
-3. **One** wizard: `missing_image_language` (the other wizards move to Phase 3, delivered independently — see §11).
-4. Report schema v1.0 + JSON generation.
-5. Manual "copy report" fallback (no GitHub required) — lets the whole wizard + report generation be validated
+1. - [x] Project setup + React/Vite skeleton + GitHub Pages deployment.
+2. - [x] Card lookup + preview (via Scryfall API, URL-paste and search).
+3. - [ ] **One** wizard: `missing_image_language` (the other wizards move to Phase 3, delivered independently — see §11).
+4. - [ ] Report schema v1.0 + JSON generation.
+5. - [ ] Manual "copy report" fallback (no GitHub required) — lets the whole wizard + report generation be validated
    end-to-end without any GitHub work.
-6. Deploy to GitHub Pages via Actions — ships Phase 1 as a live, usable tool (report generation + manual copy) before
+6. - [ ] Add a checkbox to also search the card on mythic.tool database. To the user to see if the card is already fixed on this database. 
+7. - [ ] Deploy to GitHub Pages via Actions — ships Phase 1 as a live, usable tool (report generation + manual copy) before
    any GitHub write-access work begins.
 
 The `other` structured fallback wizard also moves to Phase 3 (§11) — Phase 1 stays focused on proving the single

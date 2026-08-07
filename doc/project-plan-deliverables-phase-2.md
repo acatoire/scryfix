@@ -13,6 +13,8 @@ wizard already shipped in Phase 1.
     - number of open PRs awaiting review/merge
     - number of images stored in the repo (history)
     - repo size history (on-disk `.git` size)
+    - link to PR that need completation because the user didn't upload the image and the report is incomplete. (see
+      Phase 1, item 3.1)
 
    Pulled via the GitHub API (Search API for PR counts, Contents/Trees API or a small scheduled GitHub Action that
    snapshots repo size into a tracked JSON file, since size isn't directly queryable per-commit via the REST API alone).

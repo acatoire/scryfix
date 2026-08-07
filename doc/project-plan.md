@@ -396,6 +396,9 @@ blank textarea.
 
 - App scaffold: `npm create vite@latest scryfix -- --template react-ts` (official Vite template, no extra opinions to
   strip out).
+  - ◇  Select a framework:    React    
+    ◇  Select a variant:      TypeScript + React Compiler    
+    ◇  Which linter to use?   ESLint    
 - Pages deploy: Vite's documented GitHub Pages recipe using `actions/deploy-pages` (official Action).
 - GitHub API client: [`@octokit/rest`](https://github.com/octokit/rest.js).
 - Device Flow client: [`@octokit/auth-oauth-device`](https://github.com/octokit/auth-oauth-device.js) — handles the

@@ -16,6 +16,8 @@ Each can be built and shipped on its own, in any order, once Phase 2's GitHub wr
    or one PR per card generated in a batch (needs a decision once we get there — a single PR is easier to review as "one
    issue", but the current repo layout assumes one issue per folder per PR, so this will need a small schema/flow
    extension).
+7. Extend the mythic.tool checkbox database to a multiple database compare tool.
+
 
 Items 1, 2, and 4 are all just new wizard definitions — same JSON-config mechanism from Phase 1 (§5), no new
 architecture. Item 4 (`unlisted_printing`) is placed after item 3 (duplicate check) because its

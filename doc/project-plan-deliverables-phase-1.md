@@ -11,9 +11,10 @@ format on a live, deployed static site first.
 4. - [x] Report schema v1.0 + JSON generation.
 5. - [x] Manual "download report zip" fallback (no GitHub required) — lets the whole wizard + report generation be validated
    end-to-end without any GitHub work.
-6. - [ ] Deploy to GitHub Pages via Actions — ships Phase 1 as a live, usable tool (report generation + manual copy) before
+6. - [x] Deploy to GitHub Pages via Actions — ships Phase 1 as a live, usable tool (report generation + manual copy) before
    any GitHub write-access work begins.
-7. - [ ] Add a checkbox to also search the card on mythic.tool database. To the user to see if the card is already fixed on this database.
+7. - [x] Add actions for unit tests and linting, to be run on every PR. With badges on the README.
+8. - [ ] Add a checkbox to also search the card on mythic.tool database. To the user to see if the card is already fixed on this database.
 
 
 The `other` structured fallback wizard also moves to Phase 3 (§11) — Phase 1 stays focused on proving the single

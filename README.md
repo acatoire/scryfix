@@ -1,6 +1,12 @@
 # Scryfix
 
+[![Tests](https://github.com/acatoire/scryfix/actions/workflows/test.yml/badge.svg)](https://github.com/acatoire/scryfix/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://acatoire.github.io/scryfix/badges/coverage.json)](https://acatoire.github.io/scryfix/)
+[![Last deploy](https://img.shields.io/endpoint?url=https://acatoire.github.io/scryfix/badges/deployed-at.json)](https://acatoire.github.io/scryfix/)
+
 *A community tool for reporting and fixing data errors on Scryfall.*
+
+**Live app:** https://acatoire.github.io/scryfix/
 
 ## Description
 
@@ -16,8 +22,8 @@
 `mtg`, `magic-the-gathering`, `scryfall`,`bug-reporting`, `data-quality`, `react`, `vite`
 
 ### Website
+https://acatoire.github.io/scryfix/ - the live app.
+
 https://scryfall.com/ - Magic: The Gathering card database and API.
 https://scryfall.com/docs/api - Scryfall API documentation.
 https://scryfall.com/donate - Scryfall donation page.
-
-**Website field**: link to the deployed GitHub Pages URL once Phase 1 ships.

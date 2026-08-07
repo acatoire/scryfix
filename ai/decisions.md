@@ -2,6 +2,38 @@
 
 Chronological, most-recent first. Each entry: what was decided/found, why, and where it's implemented.
 
+## Coverage/last-deploy badges are static JSON served from the Pages deploy itself
+
+Both badges use shields.io's "endpoint badge" (`img.shields.io/endpoint?url=...`), fed by a small JSON
+file (`{schemaVersion, label, message, color}`) written by `.github/workflows/deploy.yml` into
+`dist/badges/*.json` right after `npm run build`, so it gets uploaded and served alongside the app at
+`https://acatoire.github.io/scryfix/badges/*.json`. Chosen over a separate badge-hosting branch or a
+third-party coverage service because the Pages deploy already exists — no new infra, no new
+permissions. Tradeoff: since `deploy.yml` only runs on push to `main` and only writes the badge files
+on a *successful* build (tests gate the build step), both badges freeze at their last-good value if a
+push to main starts failing — they will NOT flip to a failing/red state on their own. The separate
+"Tests" badge (`test.yml`, runs on every push/PR, its own native GitHub Actions status badge) is what
+actually reacts to failures live; the JSON-endpoint badges are informational snapshots, not health
+indicators. Coverage % is measured across the whole `src/**/*.{ts,tsx}` tree
+(`vite.config.ts` → `test.coverage.all: true`), not just files a test happens to import — without that,
+v8's default behavior only instruments imported files, which made pure-logic-only coverage read ~99%
+while the untested React components (most of the app) were invisible to the number entirely.
+
+## GitHub Action / Node versions must be verified live, not recalled from training data
+
+Trained knowledge of "latest" GitHub Action major versions and Node.js LTS status goes stale fast and
+was already wrong more than once in this repo (e.g. assuming `actions/checkout@v4`,
+`actions/configure-pages@v5`, `actions/upload-pages-artifact@v3/v4`, `actions/deploy-pages@v4` when v7,
+v6, v5, and v5 respectively were already current). Verified live on 2026-08-07 via each repo's
+`/releases/latest` redirect (most reliable — reports the resolved tag directly, unlike search-engine
+summaries which sometimes hallucinate dates/version numbers): `actions/checkout@v7`,
+`actions/setup-node@v7`, `actions/configure-pages@v6`, `actions/upload-pages-artifact@v5`,
+`actions/deploy-pages@v5`. Node: nodejs.org listed v24 (Krypton) as Active LTS and v20 (Iron) as EOL;
+v26 was the "Current" line, not yet LTS until Oct 2026. User explicitly chose Node 26 anyway (used in
+both workflows) — a conscious pre-LTS tradeoff, not an oversight. Before touching CI config again,
+re-verify current versions the same way rather than trusting what's written here or in training data —
+this note records *why* 26 was picked, not that it will still be current.
+
 ## The app dir is `scryfix/`, not a nested `scryfix/scryfix/` — verify path claims against the tree
 
 A wrong `cd scryfix/scryfix` belief got repeated into `CLAUDE.md`, `doc/developer-guide.md`, and

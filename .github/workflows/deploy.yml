@@ -29,8 +29,16 @@ jobs:
           cache-dependency-path: scryfix/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
+      - name: Generate status badges
+        run: |
+          mkdir -p dist/badges
+          PCT=$(node -p "Math.round(require('./coverage/coverage-summary.json').total.lines.pct)")
+          COLOR=red
+          if [ "$PCT" -ge 80 ]; then COLOR=brightgreen; elif [ "$PCT" -ge 50 ]; then COLOR=yellow; fi
+          echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${PCT}%\",\"color\":\"${COLOR}\"}" > dist/badges/coverage.json
+          echo "{\"schemaVersion\":1,\"label\":\"last deploy\",\"message\":\"$(date -u +%Y-%m-%d)\",\"color\":\"blue\"}" > dist/badges/deployed-at.json
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

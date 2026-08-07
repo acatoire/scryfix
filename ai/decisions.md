@@ -2,6 +2,50 @@
 
 Chronological, most-recent first. Each entry: what was decided/found, why, and where it's implemented.
 
+## Verifying mobile layout: msedge's `--screenshot` CLI flag ignores `--window-size` for layout
+
+There's no headless-browser *tool* wired into this environment (still true — see the CI/Node entry
+below), but the system has Microsoft Edge installed
+(`C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`), and `puppeteer-core` (no Chromium
+download, just drives that existing binary) can be `npm install --no-save`'d on demand for exactly this
+kind of check — real `page.setViewport()` + `getBoundingClientRect()`, not a screenshot guess.
+**Don't trust `msedge --headless=new --window-size=W,H --screenshot=out.png`** for viewport-dependent
+layout checks — it renders at some other (wider) default layout viewport and then crops/scales the
+output image to `W×H`, so narrow-viewport content reads as "cut off" in the PNG even when the real
+computed layout has zero overflow at that width. This produced a false positive while chasing the
+mobile-overflow bug below — the fix looked like it did nothing across several iterations, until
+switching to `puppeteer-core`'s `page.setViewport()` + `element.getBoundingClientRect()` (authoritative,
+same as a real device) showed `document.body.scrollWidth === viewportWidth` (no overflow) all along
+for one of the two real bugs. Always drive the actual app flow (type into the real input, click the
+real button, wait for the real Scryfall response) rather than a static screenshot of the idle page —
+the reported issue may only be reachable after a real interaction.
+
+## Two distinct mobile-overflow bugs, both from flexbox's automatic-minimum-size trap
+
+"Some parts are out of the screen on phone" traced to two separate instances of the same root cause:
+a flex item that is *itself* a flex/grid container (or a plain text `<input>`) has an automatic
+minimum width based on its own content unless something opts it out with `min-width: 0`. That minimum
+can be wider than the viewport and will propagate up through nested flex containers, overflowing the
+page — CSS `max-width`/`overflow-x: hidden` on an ancestor doesn't fix this, it just clips the symptom
+(and clipping without fixing turns "scrollable" into "silently truncated," which is worse for users).
+1. `CardPreview.css` — `.card-preview` laid out the 223px-wide card image and the info column
+   side-by-side with `flex-wrap: nowrap` (implicit) and the image pinned `flex: 0 0 auto` (refuses to
+   shrink). Fixed by adding `flex-wrap: wrap` to `.card-preview` (image and info column stack instead
+   of forcing width) and `flex: 1 1 260px; min-width: 0` on `.card-preview-info`. The "Set
+   Switch"/"Language Switch" row (`.card-preview-selects`) got the same treatment — still one line
+   whenever there's room, wraps instead of overflowing when there isn't.
+2. `CardLookup.css` — the search `<input>` has a browser-default intrinsic minimum width
+   (~170–200px) that flexbox won't shrink below without an explicit `min-width: 0`. This was the one
+   actually visible on the plain home page (no card looked up yet) — the search button was pushed off
+   the right edge. Fixed with `min-width: 0` on `.card-lookup`, `.card-lookup form`, and the `input`
+   itself.
+
+As a general defensive measure (not the fix for either bug above, but cheap insurance against the same
+class of issue elsewhere): `src/index.css` now has a universal `box-sizing: border-box` reset and
+`overflow-x: hidden` on `html`/`body`. Also fixed in `WizardEngine.css`: the attachment/URL-list row's
+`text-overflow: ellipsis` truncation silently didn't work without `min-width: 0` on the flex item —
+a long filename or pasted URL would force the row wider instead of truncating.
+
 ## Component test setup: jsdom + Testing Library, and its jsdom gaps
 
 Added to hit an 80%+ coverage target (`vite.config.ts` → `test.environment: 'jsdom'`,

@@ -24,6 +24,6 @@
 ### Website
 https://acatoire.github.io/scryfix/ - the live app.
 
-https://scryfall.com/ - Magic: The Gathering card database and API.
-https://scryfall.com/docs/api - Scryfall API documentation.
-https://scryfall.com/donate - Scryfall donation page.
+https://scryfall.com/ - Magic: The Gathering card database and API.  
+https://scryfall.com/docs/api - Scryfall API documentation.  
+https://scryfall.com/donate - Scryfall donation page.  

@@ -5,7 +5,7 @@ import SelectStep from './steps/SelectStep'
 import TextareaStep from './steps/TextareaStep'
 import UrlListStep from './steps/UrlListStep'
 import type { Attachment, WizardAnswers, WizardConfig } from './types'
-import { isStepAnswered } from './validation'
+import { canSkipAsIncomplete, isStepAnswered } from './validation'
 import WizardSummary from './WizardSummary'
 import './WizardEngine.css'
 
@@ -18,18 +18,26 @@ interface WizardEngineProps {
 function WizardEngine({ config, card, onExit }: WizardEngineProps) {
   const [stepIndex, setStepIndex] = useState(0)
   const [answers, setAnswers] = useState<WizardAnswers>({})
+  const [skipped, setSkipped] = useState<Record<string, boolean>>({})
   const [done, setDone] = useState(false)
 
   const step = config.steps[stepIndex]
   const isLastStep = stepIndex === config.steps.length - 1
-  const canAdvance = isStepAnswered(step, answers[step.id])
+  const canAdvance = isStepAnswered(step, answers[step.id], skipped[step.id])
 
   function setAnswer(id: string, value: WizardAnswers[string]) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
   }
 
+  function setAttachments(id: string, value: Attachment[]) {
+    setAnswer(id, value)
+    if (value.length > 0) setSkipped((prev) => ({ ...prev, [id]: false }))
+  }
+
   if (done) {
-    return <WizardSummary config={config} card={card} answers={answers} onExit={onExit} />
+    return (
+      <WizardSummary config={config} card={card} answers={answers} skipped={skipped} onExit={onExit} />
+    )
   }
 
   return (
@@ -58,11 +66,25 @@ function WizardEngine({ config, card, onExit }: WizardEngineProps) {
         />
       )}
       {step.kind === 'attachments' && (
-        <AttachmentsStep
-          step={step}
-          value={answers[step.id] as Attachment[] | undefined}
-          onChange={(value) => setAnswer(step.id, value)}
-        />
+        <>
+          <AttachmentsStep
+            step={step}
+            value={answers[step.id] as Attachment[] | undefined}
+            onChange={(value) => setAttachments(step.id, value)}
+          />
+          {canSkipAsIncomplete(step) && (
+            <label className="wizard-skip-incomplete">
+              <input
+                type="checkbox"
+                checked={skipped[step.id] ?? false}
+                onChange={(event) =>
+                  setSkipped((prev) => ({ ...prev, [step.id]: event.target.checked }))
+                }
+              />
+              I don't have this yet — submit as incomplete and let the community add it later
+            </label>
+          )}
+        </>
       )}
       {step.kind === 'urlList' && (
         <UrlListStep

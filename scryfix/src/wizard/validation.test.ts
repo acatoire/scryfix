@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Attachment, WizardStepDef } from './types'
-import { isStepAnswered } from './validation'
+import { canSkipAsIncomplete, isStepAnswered } from './validation'
 
 const fileAttachment: Attachment = {
   id: '1',
@@ -52,10 +52,37 @@ describe('isStepAnswered', () => {
     expect(isStepAnswered(required, [fileAttachment])).toBe(true)
   })
 
+  it('a required attachments step can be skipped as incomplete', () => {
+    const required: WizardStepDef = {
+      kind: 'attachments',
+      id: 'fix_files',
+      label: 'Fix files',
+      required: true,
+    }
+    expect(isStepAnswered(required, [], true)).toBe(true)
+    // providing an attachment still counts even without the skip flag
+    expect(isStepAnswered(required, [fileAttachment], false)).toBe(true)
+  })
+
   it('urlList is always answered (never required)', () => {
     const step: WizardStepDef = { kind: 'urlList', id: 'external_refs', label: 'External refs' }
     expect(isStepAnswered(step, undefined)).toBe(true)
     expect(isStepAnswered(step, [])).toBe(true)
     expect(isStepAnswered(step, ['https://example.com'])).toBe(true)
+  })
+})
+
+describe('canSkipAsIncomplete', () => {
+  it('is true only for a required attachments step', () => {
+    expect(
+      canSkipAsIncomplete({ kind: 'attachments', id: 'fix_files', label: 'Fix files', required: true }),
+    ).toBe(true)
+    expect(canSkipAsIncomplete({ kind: 'attachments', id: 'evidence', label: 'Evidence' })).toBe(false)
+    expect(
+      canSkipAsIncomplete({ kind: 'textarea', id: 'description', label: 'Description', required: true }),
+    ).toBe(false)
+    expect(
+      canSkipAsIncomplete({ kind: 'select', id: 'lang', label: 'Lang', optionsSource: 'scryfallLanguages' }),
+    ).toBe(false)
   })
 })

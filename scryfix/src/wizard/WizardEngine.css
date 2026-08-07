@@ -53,6 +53,35 @@
   font-size: 13px;
 }
 
+.wizard-skip-incomplete {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+
+  input {
+    margin-top: 2px;
+  }
+}
+
+.wizard-incomplete-banner {
+  font-size: 14px;
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.wizard-incomplete-tag {
+  font-size: 13px;
+  color: var(--text);
+  font-style: italic;
+}
+
 .wizard-attachments,
 .wizard-url-list {
   list-style: none;

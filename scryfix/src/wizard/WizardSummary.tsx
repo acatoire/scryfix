@@ -8,6 +8,7 @@ interface WizardSummaryProps {
   config: WizardConfig
   card: ScryfallCard
   answers: WizardAnswers
+  skipped: Record<string, boolean>
   onExit: () => void
 }
 
@@ -31,8 +32,10 @@ function formatValue(step: WizardConfig['steps'][number], value: WizardAnswers[s
   return urls.length > 0 ? urls.join(', ') : '—'
 }
 
-function WizardSummary({ config, card, answers, onExit }: WizardSummaryProps) {
+function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummaryProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const missingSteps = config.steps.filter((step) => skipped[step.id])
+  const isIncomplete = missingSteps.length > 0
 
   return (
     <div className="wizard wizard-summary">
@@ -41,6 +44,14 @@ function WizardSummary({ config, card, answers, onExit }: WizardSummaryProps) {
         {card.collector_number} · {card.lang}
       </p>
       <h2>Review: {config.title}</h2>
+
+      {isIncomplete && (
+        <p className="wizard-incomplete-banner">
+          Incomplete report — missing {missingSteps.map((step) => step.label.toLowerCase()).join(', ')}.
+          It can still be submitted; the community will be able to complete it later.
+        </p>
+      )}
+
       <p>
         Report generation and submission ship in a later step — for now, here's what would be
         included:
@@ -69,6 +80,8 @@ function WizardSummary({ config, card, answers, onExit }: WizardSummaryProps) {
                         </button>
                       ))}
                     </div>
+                  ) : skipped[step.id] ? (
+                    <span className="wizard-incomplete-tag">Not provided — marked incomplete</span>
                   ) : (
                     '—'
                   )

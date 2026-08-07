@@ -7,7 +7,7 @@ format on a live, deployed static site first.
 1. - [x] Project setup + React/Vite skeleton + GitHub Pages deployment.
 2. - [x] Card lookup + preview (via Scryfall API, URL-paste and search).
 3. - [x] **One** wizard: `missing_image_language` (the other wizards move to Phase 3, delivered independently — see §11).
-3.1. - [ ] Wizard Upload the correct card image for this language/printing is required, add the possibility to put it optional and the report will be special as not complete the community will be able to complete it later.
+3.1. - [x] Wizard Upload the correct card image is required for now, add the possibility to put it optional and the report will be special as not complete the community will be able to complete it later.
 4. - [ ] Report schema v1.0 + JSON generation.
 5. - [ ] Manual "copy report" fallback (no GitHub required) — lets the whole wizard + report generation be validated
    end-to-end without any GitHub work.

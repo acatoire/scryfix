@@ -26,6 +26,7 @@ Run from `scryfix`:
 | `npm run preview` | Serve the production build locally       |
 | `npm run lint`    | ESLint over the whole project            |
 | `npm test`        | Run the unit tests (Vitest)              |
+| `npm run test:coverage` | Run tests with coverage (feeds the README badge) |
 
 ## 4. Repo layout
 
@@ -64,9 +65,13 @@ scryfix/                       # repo root
   centralized.
 - **Styling**: plain CSS per component (no CSS framework), theme variables (`--text`, `--accent`, `--border`, etc.)
   defined in `src/index.css` and shared via `:root`, with a `prefers-color-scheme: dark` override.
-- **Unit tests**: [Vitest](https://vitest.dev/), colocated as `*.test.ts` next to the file under test (e.g.
-  `src/lib/scryfall.test.ts`). Run with `npm test`. Prioritize testing pure logic (URL parsing, rate limiting, API
-  clients) over UI — no React component-testing setup (jsdom/Testing Library) is wired up yet.
+- **Unit/component tests**: [Vitest](https://vitest.dev/) + jsdom + [Testing Library](https://testing-library.com/),
+  colocated as `*.test.ts`/`*.test.tsx` next to the file under test. Run with `npm test`. For a component that talks
+  to `src/lib/scryfall.ts` (e.g. `CardLookup`), mock that module rather than hitting the real network — see
+  `CardLookup.test.tsx` for the pattern (`vi.mock` with `importOriginal` to keep `ScryfallApiError` real for
+  `instanceof` checks). Shared card fixtures live in `src/test-utils/scryfallFixtures.ts`. Coverage target: 80%+
+  lines (`vite.config.ts` → `test.coverage.all: true` so untested files count against the % instead of being
+  invisible to it — don't remove that when adding new source files).
 
 ## 7. Deployment
 

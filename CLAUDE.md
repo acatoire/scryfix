@@ -61,5 +61,10 @@ Four areas, each independently testable via pure functions kept out of React com
 - **`src/data/scryfallLanguages.ts`** — static mirror of Scryfall's documented language list, used both
   as wizard `select` options and as the lang-code validation set in the URL parser above.
 
-Tests are colocated (`*.test.ts` next to the file under test) and target the pure logic layers above —
-there's no component/DOM test setup (jsdom, Testing Library) in this project yet.
+Tests are colocated (`*.test.ts`/`*.test.tsx` next to the file under test). Component tests run under
+jsdom with Testing Library (`vite.config.ts` → `test.environment: 'jsdom'`, setup in
+`src/setupTests.ts`); a component that calls `src/lib/scryfall.ts` should mock that module rather than
+hit the real network (see `CardLookup.test.tsx`). Shared card fixtures: `src/test-utils/scryfallFixtures.ts`.
+Coverage is measured across the whole `src/` tree, not just files a test imports
+(`test.coverage.all: true`) — target 80%+ lines; keep that setting when adding new source files, or
+untested ones go invisible to the % instead of dragging it down.

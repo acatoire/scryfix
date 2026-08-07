@@ -12,6 +12,8 @@ export default defineConfig(({ command }) => ({
     babel({ presets: [reactCompilerPreset()] })
   ],
   test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/setupTests.ts'],
     // json-summary feeds the coverage badge generated in .github/workflows/deploy.yml.
     // `all: true` instruments every src file, not just ones a test happens to import — otherwise
     // the untested React components would be invisible to the % instead of dragging it down.
@@ -19,7 +21,7 @@ export default defineConfig(({ command }) => ({
       reporter: ['text', 'json-summary'],
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.ts', 'src/main.tsx'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/main.tsx', 'src/setupTests.ts', 'src/test-utils/**'],
     },
   },
 }))

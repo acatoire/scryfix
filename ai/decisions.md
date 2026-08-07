@@ -2,6 +2,38 @@
 
 Chronological, most-recent first. Each entry: what was decided/found, why, and where it's implemented.
 
+## Component test setup: jsdom + Testing Library, and its jsdom gaps
+
+Added to hit an 80%+ coverage target (`vite.config.ts` → `test.environment: 'jsdom'`,
+`test.setupFiles: ['./src/setupTests.ts']`) after `coverage.all: true` (see below) exposed that every
+React component had 0% coverage. Two jsdom gaps hit immediately, both worked around in
+`src/setupTests.ts`:
+- `URL.createObjectURL`/`revokeObjectURL` aren't implemented in jsdom — stubbed globally, since
+  `AttachmentsStep`, `downloadReportZip.ts`, and `WizardSummary`'s thumbnail previews all call them
+  directly.
+- An `<img alt="">` (decorative, e.g. `ImageLightbox`'s big image) has computed role `presentation`,
+  not `img` — `getByRole('img', {...})` won't find it. Query `getByRole('presentation')` instead, and
+  watch for a *different* element on the page coincidentally sharing the same accessible name (a small
+  thumbnail with non-empty `alt` matching the lightbox's `alt=""` image's context) silently matching
+  the wrong element — this exact mistake passed one assertion for the wrong reason in
+  `WizardSummary.test.tsx` before being caught by the *next* assertion failing.
+- A component that imports `src/lib/scryfall.ts` should mock the whole module
+  (`vi.mock('../lib/scryfall', async (importOriginal) => ({ ...await importOriginal(), fn: vi.fn() }))`)
+  rather than hit the real network — `importOriginal` keeps `ScryfallApiError` real so `instanceof`
+  checks in the component under test still work. See `CardLookup.test.tsx`.
+- `vi.mocked(fn)` call history persists across tests in the same file unless cleared — a
+  `vi.clearAllMocks()` in `beforeEach` is required, not optional, once more than one test calls the
+  same mocked function with `toHaveBeenCalledWith`/`.not.toHaveBeenCalled()`.
+
+## Coverage jumped from 35% to 98% by adding component tests, not by changing what counts
+
+`coverage.all: true` (see below) already made the % honest by counting untested files; going from ~35%
+to 80%+ meant actually writing tests for `App.tsx`, `CardLookup.tsx`, `CardPreview.tsx`,
+`CardSearchResults.tsx`, `WizardEngine.tsx`, `WizardSummary.tsx`, `ImageLightbox.tsx`, all four
+`wizard/steps/*.tsx`, and `downloadReportZip.ts` — the entire previously-untested React layer. Landed at
+~98% lines. If coverage drops noticeably below 80% again, the fix is a real test for whatever regressed,
+not loosening `coverage.all`/`include` to make the number look better.
+
 ## Coverage/last-deploy badges are static JSON served from the Pages deploy itself
 
 Both badges use shields.io's "endpoint badge" (`img.shields.io/endpoint?url=...`), fed by a small JSON

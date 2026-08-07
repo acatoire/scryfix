@@ -11,13 +11,13 @@ Get the app running locally and know where things live.
 
 ```bash
 git clone <repo-url>
-cd scryfix/scryfix   # the app lives in the nested scryfix/ dir, not the repo root
+cd scryfix   # the app lives in the scryfix/ dir, not the repo root
 npm install
 ```
 
 ## 3. Common commands
 
-Run from `scryfix/scryfix`:
+Run from `scryfix`:
 
 | Command           | What it does                             |
 |-------------------|------------------------------------------|
@@ -31,13 +31,17 @@ Run from `scryfix/scryfix`:
 
 ```
 scryfix/                       # repo root
-├── doc/                       # project plan, phase deliverables, this guide
-├── reports/                   # (future) submitted report data lives here once GitHub write flow ships
-└── scryfix/                   # the actual React + Vite app — cd here for everything below
+├── ai/                         # durable AI-agent memory (decisions, gotchas) — see ai/README.md
+├── doc/                        # project plan, phase deliverables, this guide
+├── reports/                    # (future) submitted report data lives here once GitHub write flow ships
+└── scryfix/                    # the actual React + Vite app — cd here for everything below
     ├── src/
-    │   ├── lib/                # framework-agnostic clients (e.g. scryfall.ts)
-    │   ├── components/         # UI components (one .tsx + matching .css per component)
-    ├── public/                 # static assets served as-is
+    │   ├── lib/                 # framework-agnostic clients (e.g. scryfall.ts)
+    │   ├── data/                 # static reference data (e.g. Scryfall language list)
+    │   ├── components/          # card lookup UI (one .tsx + matching .css per component)
+    │   ├── wizard/               # JSON-config-driven wizard engine + steps
+    │   └── report/               # report schema v1.0 + JSON/zip generation
+    └── public/                  # static assets served as-is
 ```
 
 ## 5. Where to read up on the project
@@ -66,5 +70,7 @@ scryfix/                       # repo root
 
 ## 7. Deployment
 
-Not yet wired up — GitHub Pages deployment via GitHub Actions is deliverable #7 in Phase 1 (see
-`project-plan-deliverables-phase-1.md`). Once live, the URL goes in the root README's "Website" field.
+`.github/workflows/deploy.yml` lints, tests, builds, and deploys `scryfix/` to GitHub Pages on every
+push to `main` (or manual dispatch). `vite.config.ts` sets `base: '/scryfix/'` for production builds
+only — the dev server still serves from `/`. One-time repo setting required: Settings → Pages → Source
+→ **GitHub Actions**. Once live, the URL goes in the root README's "Website" field.

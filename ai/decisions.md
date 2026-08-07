@@ -2,6 +2,18 @@
 
 Chronological, most-recent first. Each entry: what was decided/found, why, and where it's implemented.
 
+## The app dir is `scryfix/`, not a nested `scryfix/scryfix/` — verify path claims against the tree
+
+A wrong `cd scryfix/scryfix` belief got repeated into `CLAUDE.md`, `doc/developer-guide.md`, and
+`.github/workflows/deploy.yml` (`working-directory`, `cache-dependency-path`, artifact `path`). It went
+unnoticed locally because shell commands used a `cd .../scryfix/scryfix 2>/dev/null || cd scryfix`
+fallback that silently landed in the correct single-level `scryfix/` dir every time — so local
+build/lint/test all "worked" despite the wrong mental model. The workflow YAML has no such fallback, so
+it broke in CI with `Error: Some specified paths were not resolved, unable to cache dependencies.`
+Lesson: a path claim repeated across docs isn't evidence it's correct if every command that used it had
+a silent fallback — run `find`/`ls` from a known-clean cwd to verify the real tree before trusting it,
+especially before writing something (like CI config) that has no fallback to mask the mistake.
+
 ## Report "incomplete" / "missing" fields are an extension beyond the written schema
 
 `doc/project-plan.md` §6 doesn't mention these two fields — they were added ad hoc (phase-1 deliverable

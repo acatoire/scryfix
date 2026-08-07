@@ -21,7 +21,7 @@ Longer-lived notes only this project's history would know (decisions, gotchas, l
 
 ## Commands
 
-The app lives in the **nested** `scryfix/scryfix` directory, not the repo root — `cd` there first.
+The app lives in the `scryfix` directory, not the repo root — `cd` there first.
 
 ```bash
 npm install

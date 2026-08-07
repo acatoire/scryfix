@@ -8,8 +8,8 @@ format on a live, deployed static site first.
 2. - [x] Card lookup + preview (via Scryfall API, URL-paste and search).
 3. - [x] **One** wizard: `missing_image_language` (the other wizards move to Phase 3, delivered independently — see §11).
 3.1. - [x] Wizard Upload the correct card image is required for now, add the possibility to put it optional and the report will be special as not complete the community will be able to complete it later.
-4. - [ ] Report schema v1.0 + JSON generation.
-5. - [ ] Manual "copy report" fallback (no GitHub required) — lets the whole wizard + report generation be validated
+4. - [x] Report schema v1.0 + JSON generation.
+5. - [x] Manual "download report zip" fallback (no GitHub required) — lets the whole wizard + report generation be validated
    end-to-end without any GitHub work.
 6. - [ ] Add a checkbox to also search the card on mythic.tool database. To the user to see if the card is already fixed on this database. 
 7. - [ ] Deploy to GitHub Pages via Actions — ships Phase 1 as a live, usable tool (report generation + manual copy) before

@@ -212,6 +212,33 @@
   }
 }
 
+.wizard-summary-json {
+  font-size: 13px;
+  color: var(--text);
+
+  summary {
+    cursor: pointer;
+  }
+
+  pre {
+    margin: 8px 0 0;
+    padding: 10px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    overflow-x: auto;
+    color: var(--text-h);
+  }
+}
+
+.wizard-error {
+  color: #d33;
+}
+
+.wizard-download {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
 .wizard-summary-thumbs {
   display: flex;
   flex-wrap: wrap;

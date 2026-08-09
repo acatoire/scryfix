@@ -24,12 +24,12 @@ Longer-lived notes only this project's history would know (decisions, gotchas, l
 The app lives in the `scryfix` directory, not the repo root — `cd` there first.
 
 ```bash
-npm install
-npm run dev        # Vite dev server with HMR
-npm run build       # tsc -b (typecheck) && vite build
-npm run lint        # ESLint over the whole project
-npm test            # vitest run — all tests
-npx vitest run src/lib/scryfall.test.ts   # a single test file
+pnpm install
+pnpm dev            # Vite dev server with HMR
+pnpm run build      # tsc -b (typecheck) && vite build
+pnpm run lint       # ESLint over the whole project
+pnpm test           # vitest run — all tests
+pnpm vitest run src/lib/scryfall.test.ts   # a single test file
 ```
 
 No backend, no database — everything is a static SPA. GitHub itself is the eventual persistence/review

@@ -5,28 +5,28 @@ Get the app running locally and know where things live.
 ## 1. Prerequisites
 
 - Node.js 20+ (Vite 8 / current toolchain requires a recent Node).
-- npm (repo ships a `package-lock.json`).
+- pnpm 11+ (repo ships a `pnpm-lock.yaml`; version pinned via `package.json`'s `packageManager` field).
 
 ## 2. Setup
 
 ```bash
 git clone <repo-url>
 cd scryfix   # the app lives in the scryfix/ dir, not the repo root
-npm install
+pnpm install
 ```
 
 ## 3. Common commands
 
 Run from `scryfix`:
 
-| Command           | What it does                             |
-|-------------------|------------------------------------------|
-| `npm run dev`     | Start Vite dev server with HMR           |
-| `npm run build`   | Type-check (`tsc -b`) + production build |
-| `npm run preview` | Serve the production build locally       |
-| `npm run lint`    | ESLint over the whole project            |
-| `npm test`        | Run the unit tests (Vitest)              |
-| `npm run test:coverage` | Run tests with coverage (feeds the README badge) |
+| Command                  | What it does                                     |
+|--------------------------|---------------------------------------------------|
+| `pnpm dev`               | Start Vite dev server with HMR                   |
+| `pnpm run build`         | Type-check (`tsc -b`) + production build         |
+| `pnpm run preview`       | Serve the production build locally               |
+| `pnpm run lint`          | ESLint over the whole project                    |
+| `pnpm test`              | Run the unit tests (Vitest)                      |
+| `pnpm run test:coverage` | Run tests with coverage (feeds the README badge) |
 
 ## 4. Repo layout
 
@@ -66,16 +66,16 @@ scryfix/                       # repo root
 - **Styling**: plain CSS per component (no CSS framework), theme variables (`--text`, `--accent`, `--border`, etc.)
   defined in `src/index.css` and shared via `:root`, with a `prefers-color-scheme: dark` override.
 - **Unit/component tests**: [Vitest](https://vitest.dev/) + jsdom + [Testing Library](https://testing-library.com/),
-  colocated as `*.test.ts`/`*.test.tsx` next to the file under test. Run with `npm test`. For a component that talks
-  to `src/lib/scryfall.ts` (e.g. `CardLookup`), mock that module rather than hitting the real network — see
+  colocated as `*.test.ts`/`*.test.tsx` next to the file under test. Run with `pnpm test`. For a component that talks to
+  `src/lib/scryfall.ts` (e.g. `CardLookup`), mock that module rather than hitting the real network — see
   `CardLookup.test.tsx` for the pattern (`vi.mock` with `importOriginal` to keep `ScryfallApiError` real for
-  `instanceof` checks). Shared card fixtures live in `src/test-utils/scryfallFixtures.ts`. Coverage target: 80%+
-  lines (`vite.config.ts` → `test.coverage.all: true` so untested files count against the % instead of being
-  invisible to it — don't remove that when adding new source files).
+  `instanceof` checks). Shared card fixtures live in `src/test-utils/scryfallFixtures.ts`. Coverage target: 80%+ lines
+  (`vite.config.ts` → `test.coverage.all: true` so untested files count against the % instead of being invisible to it —
+  don't remove that when adding new source files).
 
 ## 7. Deployment
 
-`.github/workflows/deploy.yml` lints, tests, builds, and deploys `scryfix/` to GitHub Pages on every
-push to `main` (or manual dispatch). `vite.config.ts` sets `base: '/scryfix/'` for production builds
-only — the dev server still serves from `/`. One-time repo setting required: Settings → Pages → Source
-→ **GitHub Actions**. Once live, the URL goes in the root README's "Website" field.
+`.github/workflows/deploy.yml` lints, tests, builds, and deploys `scryfix/` to GitHub Pages on every push to `main` (or
+manual dispatch). `vite.config.ts` sets `base: '/scryfix/'` for production builds only — the dev server still serves
+from `/`. One-time repo setting required: Settings → Pages → Source → **GitHub Actions**. Once live, the URL goes in the
+root README's "Website" field.

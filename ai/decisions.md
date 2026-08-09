@@ -2,6 +2,34 @@
 
 Chronological, most-recent first. Each entry: what was decided/found, why, and where it's implemented.
 
+## Reports repo is `acatoire/scryfix` itself, not a separate `scryfix-reports` repo
+
+`doc/project-plan.md` §2/§4.5 describe a dedicated data repo (`github.com/<org>/scryfix-reports`),
+and `UPSTREAM_REPO` in `src/lib/github.ts` was initially pointed at a separate `acatoire/scryfix-reports`
+per that doc — but that repo doesn't exist, and the user corrected this: the real target is the app's
+own repo, `acatoire/scryfix`, with reports living under a `/reports` folder inside it rather than a
+second repo. `UPSTREAM_REPO` now points there. The plan doc's separate-repo diagram hasn't been updated
+to match — treat `UPSTREAM_REPO`'s actual value as the source of truth over that doc for now.
+
+## GitHub write client (`src/lib/github.ts`) — fork-then-clone is async, retry the ref fetch
+
+`POST /repos/{owner}/{repo}/forks` returns 202 immediately for a genuinely new fork, but GitHub
+clones the repo into it in the background — a `git/refs` call against the fork right after can
+404 for a second or two. An already-forked repo returns 200 and is ready instantly, so most calls
+never hit this. `getDefaultBranchSha()` wraps the `git.getRef` call in a small `withRetry()`
+(5 attempts, 1s apart) rather than special-casing "is this fork new" — cheaper than tracking fork
+state, and harmless when the fork was already ready.
+
+Also: browser `btoa` only handles Latin1, but card names routinely contain non-ASCII (e.g. "Ange de
+miséricorde" from the Scryfall gotchas below) and images are binary. Both `report.json` and image
+files go through the same `uint8ArrayToBase64()` (UTF-8 encode text first via `TextEncoder`, then
+chunk through `String.fromCharCode`/`btoa`) rather than a naive `btoa(JSON.stringify(...))`, which
+would throw on the first accented character.
+
+Auth is a `GitHubAuth` interface (`src/lib/githubAuth.ts`) with one implementation today — a
+sessionStorage-backed PAT stand-in (Phase 2 item 1) — so the OAuth Device Flow client planned later
+can be swapped in as a second implementation without touching `github.ts`.
+
 ## Verifying mobile layout: msedge's `--screenshot` CLI flag ignores `--window-size` for layout
 
 There's no headless-browser *tool* wired into this environment (still true — see the CI/Node entry

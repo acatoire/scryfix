@@ -3,12 +3,30 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { makeCard } from '../test-utils/scryfallFixtures'
 import { downloadReportZip } from '../report/downloadReportZip'
+import { GitHubClientError, submitReport } from '../lib/github'
 import type { Attachment } from './types'
 import WizardSummary from './WizardSummary'
 import { missingImageLanguageWizard } from './wizards/missingImageLanguage'
 
 vi.mock('../report/downloadReportZip', () => ({
   downloadReportZip: vi.fn(),
+}))
+
+vi.mock('../lib/github', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/github')>()),
+  submitReport: vi.fn(),
+}))
+
+vi.mock('../lib/githubAuth', () => ({
+  getGitHubAuth: () => ({ getToken: () => null, setToken: vi.fn() }),
+}))
+
+vi.mock('../components/GitHubConnect', () => ({
+  default: ({ onConnected }: { onConnected: (username: string) => void }) => (
+    <button type="button" onClick={() => onConnected('octocat')}>
+      Fake connect
+    </button>
+  ),
 }))
 
 const card = makeCard()
@@ -122,5 +140,101 @@ describe('WizardSummary', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Download report (.zip)' }))
 
     expect(await screen.findByText(/Could not build the download/)).toBeInTheDocument()
+  })
+
+  it('prompts to connect GitHub before allowing a submit, then submits after connecting', async () => {
+    vi.mocked(submitReport).mockResolvedValue({
+      prUrl: 'https://github.com/acatoire/scryfix-reports/pull/1',
+      prNumber: 1,
+    })
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{ affected_language: 'fr' }}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Submit as GitHub PR' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(submitReport).toHaveBeenCalledTimes(1)
+    const [call] = vi.mocked(submitReport).mock.calls[0]
+    expect(call.report.reporter).toEqual({ github_username: 'octocat' })
+    expect(await screen.findByRole('link', { name: 'View the pull request' })).toHaveAttribute(
+      'href',
+      'https://github.com/acatoire/scryfix-reports/pull/1',
+    )
+  })
+
+  it('shows the GitHubClientError message when submission fails', async () => {
+    vi.mocked(submitReport).mockRejectedValueOnce(new GitHubClientError('Not signed in to GitHub.'))
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByText('Not signed in to GitHub.', { selector: 'p' })).toBeInTheDocument()
+  })
+
+  it('shows a generic error for a non-GitHubClientError submission failure, with raw detail in an accordion', async () => {
+    vi.mocked(submitReport).mockRejectedValueOnce(new Error('network down'))
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByText('Could not submit to GitHub: network down')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Error details'))
+    expect(screen.getByText(/network down/, { selector: 'pre' })).toBeInTheDocument()
+  })
+
+  it('shows the raw GitHub API response in the error accordion for an Octokit-shaped error', async () => {
+    vi.mocked(submitReport).mockRejectedValueOnce({
+      name: 'HttpError',
+      status: 404,
+      message: 'Not Found',
+      response: {
+        status: 404,
+        url: 'https://api.github.com/repos/acatoire/scryfix-reports/forks',
+        data: { message: 'Not Found', documentation_url: 'https://docs.github.com/rest/repos/forks' },
+      },
+    })
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByText('GitHub API error 404: Not Found')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Error details'))
+    expect(screen.getByText(/documentation_url/, { selector: 'pre' })).toBeInTheDocument()
   })
 })

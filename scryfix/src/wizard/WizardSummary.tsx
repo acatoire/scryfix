@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
+import GitHubConnect from '../components/GitHubConnect'
 import { SCRYFALL_LANGUAGES } from '../data/scryfallLanguages'
+import { getGitHubAuth } from '../lib/githubAuth'
+import { UPSTREAM_REPO, describeGitHubError, submitReport } from '../lib/github'
 import type { ScryfallCard } from '../lib/scryfall'
 import { buildReport } from '../report/buildReport'
 import { downloadReportZip } from '../report/downloadReportZip'
@@ -37,6 +40,11 @@ function formatValue(step: WizardConfig['steps'][number], value: WizardAnswers[s
 function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummaryProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [githubUsername, setGithubUsername] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitErrorDetail, setSubmitErrorDetail] = useState<string | null>(null)
+  const [prUrl, setPrUrl] = useState<string | null>(null)
   const missingSteps = config.steps.filter((step) => skipped[step.id])
   const isIncomplete = missingSteps.length > 0
 
@@ -56,6 +64,27 @@ function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummary
     }
   }
 
+  async function handleSubmit() {
+    setSubmitting(true)
+    setSubmitError(null)
+    setSubmitErrorDetail(null)
+    try {
+      const result = await submitReport({
+        auth: getGitHubAuth(),
+        upstream: UPSTREAM_REPO,
+        report: { ...report, reporter: { github_username: githubUsername } },
+        files,
+      })
+      setPrUrl(result.prUrl)
+    } catch (err) {
+      const info = describeGitHubError(err)
+      setSubmitError(info.message)
+      setSubmitErrorDetail(info.detail)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="wizard wizard-summary">
       <p className="wizard-card-context">
@@ -72,8 +101,8 @@ function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummary
       )}
 
       <p>
-        Report <code>{report.report_id}</code> — GitHub submission ships in a later step; for now,
-        download it as a zip (report.json + any uploaded images):
+        Report <code>{report.report_id}</code> — submit it as a GitHub pull request, or download it
+        as a zip (report.json + any uploaded images) to file it yourself:
       </p>
       <dl>
         {config.steps.map((step) => {
@@ -120,6 +149,26 @@ function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummary
 
       {downloadError && <p className="wizard-error">{downloadError}</p>}
 
+      {prUrl ? (
+        <p className="wizard-pr-success">
+          Submitted! <a href={prUrl} target="_blank" rel="noreferrer">View the pull request</a>.
+        </p>
+      ) : githubUsername ? (
+        <p className="github-connect-hint">Connected as {githubUsername}.</p>
+      ) : (
+        <GitHubConnect onConnected={setGithubUsername} />
+      )}
+
+      {submitError && (
+        <div className="wizard-error">
+          <p>{submitError}</p>
+          <details className="wizard-summary-json">
+            <summary>Error details</summary>
+            <pre>{submitErrorDetail}</pre>
+          </details>
+        </div>
+      )}
+
       <div className="wizard-nav">
         <button type="button" onClick={onExit}>
           Start a new report
@@ -127,6 +176,16 @@ function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummary
         <button type="button" className="wizard-download" onClick={() => void handleDownload()}>
           Download report (.zip)
         </button>
+        {githubUsername && !prUrl && (
+          <button
+            type="button"
+            className="wizard-submit"
+            disabled={submitting}
+            onClick={() => void handleSubmit()}
+          >
+            {submitting ? 'Submitting…' : 'Submit as GitHub PR'}
+          </button>
+        )}
       </div>
 
       {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}

@@ -1,29 +1,20 @@
-import { useState } from 'react'
-import CardLookup from './components/CardLookup'
-import type { ScryfallCard } from './lib/scryfall'
-import WizardEngine from './wizard/WizardEngine'
-import { missingImageLanguageWizard } from './wizard/wizards/missingImageLanguage'
+import { HashRouter, Route, Routes } from 'react-router-dom'
+import NavBar from './components/NavBar'
+import ReportHome from './pages/ReportHome'
+import ReportView from './pages/ReportView'
+import StatsDashboard from './pages/StatsDashboard'
 import './App.css'
 
 function App() {
-  const [reportingCard, setReportingCard] = useState<ScryfallCard | null>(null)
-
   return (
-    <section id="center">
-      <h1>Scryfix</h1>
-      {reportingCard ? (
-        <WizardEngine
-          config={missingImageLanguageWizard}
-          card={reportingCard}
-          onExit={() => setReportingCard(null)}
-        />
-      ) : (
-        <>
-          <p>Look up a card to start reporting a data error on Scryfall.</p>
-          <CardLookup onCardConfirmed={setReportingCard} />
-        </>
-      )}
-    </section>
+    <HashRouter>
+      <NavBar />
+      <Routes>
+        <Route path="/" element={<ReportHome />} />
+        <Route path="/stats" element={<StatsDashboard />} />
+        <Route path="/report" element={<ReportView />} />
+      </Routes>
+    </HashRouter>
   )
 }
 

@@ -1,0 +1,19 @@
+.report-view {
+  width: 100%;
+  max-width: 640px;
+  text-align: left;
+}
+
+.report-view-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  img {
+    width: 120px;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    object-fit: cover;
+  }
+}

@@ -15,7 +15,7 @@ wizard already shipped in Phase 1.
    below) aren't enforced yet, so this can already open a PR with no delay/duration check.
    `UPSTREAM_REPO` in `github.ts` points at `acatoire/scryfix` — reports live in a `/reports` folder
    inside the app's own repo, not a separate data repo; see `ai/decisions.md`.)
-2. - [ ] **Stats dashboard page** — a simple read-only page (built on the same static site) showing, over time:
+2. - [x] **Stats dashboard page** — a simple read-only page (built on the same static site) showing, over time:
     - List of opened PRs (with links) and their status (ready for review, need completion)
       - special icon for PR that need completion because the report is incomplete (e.g., the user didn't upload the image). (see
   Phase 1, item 3.1)
@@ -26,6 +26,17 @@ wizard already shipped in Phase 1.
       - number of open PRs awaiting review/merge
       - number of images stored in the repo (history)
       - repo size history (on-disk)
+
+   (Added a route-based nav — `react-router-dom`'s `HashRouter` (no server rewrite needed on GitHub
+   Pages), see `ai/decisions.md`. `src/pages/StatsDashboard.tsx` lists open PRs via unauthenticated
+   `api.github.com` calls (`src/lib/githubRead.ts`) — no GitHub sign-in required to just view the
+   dashboard — resolving each PR's `incomplete`/`missing` status straight from its own `report.json`
+   (fetched off the PR's head branch via `raw.githubusercontent.com`, not from `main`). `src/pages/ReportView.tsx`
+   is the "view in app" target — renders a report's card info, description, fix/evidence images, and
+   external refs read-only, no auth needed. History graphs (`src/components/TimeSeriesChart.tsx`,
+   hand-rolled inline SVG, no chart library) read `stats/history.json`, appended daily by the new
+   `.github/workflows/stats-snapshot.yml` — a static site can't compute "over time" live, so that file
+   is the one piece of dashboard data that isn't fetched fresh from the API on every visit.)
 3. - [ ] Add a specific schema.json to trace history of reports schema evolution. Will allow in the future to make
      migration task. This file will be used to validate the report.json file and will be updated when a new field is
      added or removed. We will try to have only one schema.json file for all wizards as long as possible.

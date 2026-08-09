@@ -1,0 +1,43 @@
+.stats-dashboard {
+  width: 100%;
+  max-width: 860px;
+
+  h2 {
+    margin: 8px 0 0;
+  }
+}
+
+.stats-pr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--text-h);
+
+  th,
+  td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+}
+
+.stats-pr-status-incomplete {
+  color: var(--accent);
+}
+
+.stats-pr-status-ready {
+  color: var(--text-h);
+}
+
+.stats-pr-links {
+  display: flex;
+  gap: 10px;
+  font-size: 16px;
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    line-height: 1;
+  }
+}

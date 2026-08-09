@@ -23,7 +23,7 @@ vi.mock('@octokit/rest', () => ({
   }),
 }))
 
-const { GitHubClientError, describeGitHubError, submitReport } = await import('./github')
+const { GitHubClientError, buildPrBody, describeGitHubError, submitReport } = await import('./github')
 
 function authWith(token: string | null): GitHubAuth {
   return { getToken: () => token, setToken: vi.fn() }
@@ -110,7 +110,7 @@ describe('submitReport', () => {
       base: 'main',
       head: 'me:report-1',
       title: '[missing_image_language] Cold-Eyed Selkie (AFC #183)',
-      body: 'Missing french image',
+      body: expect.stringContaining('Missing french image'),
     })
     expect(result).toEqual({ prUrl: 'https://github.com/org/scryfix-reports/pull/1', prNumber: 1 })
   })
@@ -152,6 +152,39 @@ describe('submitReport', () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+})
+
+describe('buildPrBody', () => {
+  it('includes the card, Scryfall link, and description', () => {
+    const body = buildPrBody(report)
+    expect(body).toContain('Cold-Eyed Selkie')
+    expect(body).toContain('AFC #183')
+    expect(body).toContain('Scryfall: https://scryfall.com/card/afc/183')
+    expect(body).toContain('Missing french image')
+  })
+
+  it('lists evidence, fix, and external reference links when present', () => {
+    const body = buildPrBody({
+      ...report,
+      evidence: [{ type: 'url', value: 'https://example.com/evidence' }],
+      fix_files: [{ type: 'url', value: 'https://example.com/fix' }],
+      external_refs: [{ source: 'Gatherer', url: 'https://gatherer.wizards.com/x' }],
+    })
+    expect(body).toContain('https://example.com/evidence')
+    expect(body).toContain('https://example.com/fix')
+    expect(body).toContain('[Gatherer](https://gatherer.wizards.com/x)')
+  })
+
+  it('flags an incomplete report with what is missing', () => {
+    const body = buildPrBody({ ...report, incomplete: true, missing: ['fix_files'] })
+    expect(body).toContain('Incomplete report')
+    expect(body).toContain('fix_files')
+  })
+
+  it('falls back to a placeholder when there is no description', () => {
+    const body = buildPrBody({ ...report, description: '' })
+    expect(body).toContain('_No description provided._')
   })
 })
 

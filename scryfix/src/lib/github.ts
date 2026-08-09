@@ -4,7 +4,7 @@
 // (githubAuth.ts) today and against Device Flow later.
 
 import { Octokit } from '@octokit/rest'
-import type { Report } from '../report/types'
+import type { Report, ReportAttachmentItem } from '../report/types'
 import type { GitHubAuth } from './githubAuth'
 
 export interface GitHubTarget {
@@ -125,6 +125,50 @@ async function openPullRequest(
   return { url: pr.html_url, number: pr.number }
 }
 
+function urlsOf(items: ReportAttachmentItem[]): string[] {
+  return items.filter((item): item is { type: 'url'; value: string } => item.type === 'url').map((item) => item.value)
+}
+
+// GitHub shows this as the PR's body — without it, a reviewer sees only the branch diff with no
+// context on what the report actually claims or which sources back it up.
+export function buildPrBody(report: Report): string {
+  const lines: string[] = [
+    `**${report.card.name}** — ${report.card.set.toUpperCase()} #${report.card.collector_number} (${report.card.lang})`,
+    '',
+    `Scryfall: ${report.card.scryfall_url}`,
+  ]
+
+  if (report.incomplete) {
+    lines.push(
+      '',
+      `⚠️ **Incomplete report** — missing ${report.missing.join(', ')}. The community can complete this later.`,
+    )
+  }
+
+  lines.push('', '### Description', report.description.trim() || '_No description provided._')
+
+  const evidenceUrls = urlsOf(report.evidence)
+  if (evidenceUrls.length > 0) {
+    lines.push('', '### Evidence links', ...evidenceUrls.map((url) => `- ${url}`))
+  }
+
+  const fixUrls = urlsOf(report.fix_files)
+  if (fixUrls.length > 0) {
+    lines.push('', '### Fix reference links', ...fixUrls.map((url) => `- ${url}`))
+  }
+
+  if (report.external_refs.length > 0) {
+    lines.push(
+      '',
+      '### External references',
+      ...report.external_refs.map((ref) => `- [${ref.source}](${ref.url})`),
+    )
+  }
+
+  lines.push('', `_Report ID: \`${report.report_id}\`_`)
+  return lines.join('\n')
+}
+
 // Matches the /reports/{set}/{number}/... vs /reports/_unlisted/{set}/{key}/... split in §4.5.
 function reportBasePath(report: Report): string {
   if (report.unlisted.is_unlisted) {
@@ -222,7 +266,7 @@ export async function submitReport({
     baseBranch,
     branch,
     `[${report.error_type}] ${report.card.name} (${report.card.set.toUpperCase()} #${report.card.collector_number})`,
-    report.description || '_No description provided._',
+    buildPrBody(report),
   )
   return { prUrl: pr.url, prNumber: pr.number }
 }

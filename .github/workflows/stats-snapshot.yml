@@ -1,0 +1,56 @@
+name: Stats Snapshot
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history, not the default shallow clone — `.git` size only tracks repo growth
+          # meaningfully if every snapshot measures the same (full) thing.
+          fetch-depth: 0
+
+      - name: Compute stats
+        id: stats
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OPEN_PRS=$(gh pr list --repo "${{ github.repository }}" --state open --json number --jq 'length')
+          IMAGE_COUNT=$(git ls-files 'reports/**/*.png' 'reports/**/*.jpg' 'reports/**/*.jpeg' 'reports/**/*.webp' 'reports/**/*.gif' 'reports/**/*.avif' | wc -l | tr -d ' ')
+          REPO_SIZE_BYTES=$(du -sb .git | cut -f1)
+          echo "open_prs=$OPEN_PRS" >> "$GITHUB_OUTPUT"
+          echo "image_count=$IMAGE_COUNT" >> "$GITHUB_OUTPUT"
+          echo "repo_size_bytes=$REPO_SIZE_BYTES" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Append snapshot to stats/history.json
+        run: |
+          mkdir -p stats
+          [ -f stats/history.json ] || echo '[]' > stats/history.json
+          jq --arg date "${{ steps.stats.outputs.date }}" \
+             --argjson open_prs "${{ steps.stats.outputs.open_prs }}" \
+             --argjson image_count "${{ steps.stats.outputs.image_count }}" \
+             --argjson repo_size_bytes "${{ steps.stats.outputs.repo_size_bytes }}" \
+             '(map(select(.date != $date))) + [{date: $date, open_prs: $open_prs, image_count: $image_count, repo_size_bytes: $repo_size_bytes}] | sort_by(.date)' \
+             stats/history.json > stats/history.json.tmp
+          mv stats/history.json.tmp stats/history.json
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add stats/history.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: append stats snapshot for ${{ steps.stats.outputs.date }}"
+          git push

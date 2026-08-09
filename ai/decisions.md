@@ -2,6 +2,16 @@
 
 Chronological, most-recent first. Each entry: what was decided/found, why, and where it's implemented.
 
+## `defaults.run.working-directory` doesn't apply to `uses:` action steps
+
+`test.yml`/`deploy.yml` set `defaults.run.working-directory: scryfix` so every `run:` step's shell
+starts there — but that default is a `run:` step property, not a job-wide cwd, so `uses: pnpm/action-setup@v6`
+still looked for `package.json` at `$GITHUB_WORKSPACE` (the repo root), didn't find its `packageManager`
+field, and failed with "No pnpm version is specified." Fixed by passing the action's own
+`package_json_file: scryfix/package.json` input rather than relying on the working-directory default.
+General lesson: any `uses:` step that reads repo files needs its own explicit path input — it won't
+inherit `defaults.run.working-directory` the way `run:` steps do.
+
 ## Reports repo is `acatoire/scryfix` itself, not a separate `scryfix-reports` repo
 
 `doc/project-plan.md` §2/§4.5 describe a dedicated data repo (`github.com/<org>/scryfix-reports`),

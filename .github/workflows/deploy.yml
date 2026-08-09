@@ -23,6 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
+        with:
+          # defaults.run.working-directory only applies to `run:` steps, not `uses:` actions — this
+          # action still looks in $GITHUB_WORKSPACE (repo root) for package.json unless told otherwise.
+          package_json_file: scryfix/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 26

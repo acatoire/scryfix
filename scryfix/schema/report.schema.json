@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/acatoire/scryfix/blob/main/scryfix/schema/report.schema.json",
+  "title": "Scryfix report",
+  "description": "One report.json committed under /reports/{set}/{number}/ or /reports/_unlisted/{set}/{key}/. One schema for every wizard — wizard-specific fields live in `details`, which is intentionally unconstrained. See doc/report-schema.md for version history and migration notes; doc/project-plan.md §6 for the original design this schema formalizes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "created_at",
+    "error_type",
+    "card",
+    "unlisted",
+    "details",
+    "description",
+    "evidence",
+    "fix_files",
+    "external_refs",
+    "reporter",
+    "incomplete",
+    "missing"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "description": "Bump this and add a row to doc/report-schema.md whenever a field below is added or removed."
+    },
+    "report_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "error_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The wizard id (e.g. `missing_image_language`) — consumers switch on this to interpret `details`."
+    },
+    "card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["set", "collector_number", "scryfall_id", "name", "lang", "scryfall_url"],
+      "properties": {
+        "set": { "type": "string", "minLength": 1 },
+        "collector_number": { "type": "string", "minLength": 1 },
+        "scryfall_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "lang": { "type": "string", "minLength": 1 },
+        "scryfall_url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "unlisted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_unlisted", "set_code", "collector_number_hash"],
+      "properties": {
+        "is_unlisted": { "type": "boolean" },
+        "set_code": { "type": ["string", "null"] },
+        "collector_number_hash": { "type": ["string", "null"] }
+      }
+    },
+    "details": {
+      "type": "object",
+      "description": "Wizard-specific bag, shape defined per `error_type` — deliberately not constrained here so a new wizard never requires a schema change."
+    },
+    "description": { "type": "string" },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/attachmentItem" } },
+    "fix_files": { "type": "array", "items": { "$ref": "#/$defs/attachmentItem" } },
+    "external_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "url"],
+        "properties": {
+          "source": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      }
+    },
+    "reporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_username"],
+      "properties": {
+        "github_username": { "type": ["string", "null"] }
+      }
+    },
+    "incomplete": {
+      "type": "boolean",
+      "description": "Extension beyond the original §6 example, added in Phase 1 item 3.1 — lets a report ship without a required fix file, for the community to complete later."
+    },
+    "missing": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "attachmentItem": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "const": "image" },
+            "path": { "type": "string", "minLength": 1 },
+            "purpose": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "value"],
+          "properties": {
+            "type": { "const": "url" },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  }
+}

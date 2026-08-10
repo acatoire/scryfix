@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeCard } from '../test-utils/scryfallFixtures'
 import { downloadReportZip } from '../report/downloadReportZip'
 import { GitHubClientError, submitReport } from '../lib/github'
+import { validateReport } from '../report/validateReport'
 import type { Attachment } from './types'
 import WizardSummary from './WizardSummary'
 import { missingImageLanguageWizard } from './wizards/missingImageLanguage'
@@ -19,6 +20,10 @@ vi.mock('../lib/github', async (importOriginal) => ({
 
 vi.mock('../lib/githubAuth', () => ({
   getGitHubAuth: () => ({ getToken: () => null, setToken: vi.fn() }),
+}))
+
+vi.mock('../report/validateReport', () => ({
+  validateReport: vi.fn().mockResolvedValue({ valid: true, errors: [] }),
 }))
 
 vi.mock('../components/GitHubConnect', () => ({
@@ -37,6 +42,13 @@ const fixFileAttachment: Attachment = {
 }
 
 describe('WizardSummary', () => {
+  beforeEach(() => {
+    // Clears call history only (not the default mockResolvedValue set in the vi.mock factories
+    // above) — without this, an earlier test's real submitReport/validateReport call still shows
+    // up in a later test's .not.toHaveBeenCalled()/toHaveBeenCalledWith assertions.
+    vi.clearAllMocks()
+  })
+
   it('shows the card context, title, and formatted answers', () => {
     render(
       <WizardSummary
@@ -169,6 +181,30 @@ describe('WizardSummary', () => {
       'href',
       'https://github.com/acatoire/scryfix-reports/pull/1',
     )
+  })
+
+  it('blocks submission and never calls submitReport when schema validation fails', async () => {
+    vi.mocked(validateReport).mockResolvedValueOnce({
+      valid: false,
+      errors: ["/reporter must have required property 'github_username'"],
+    })
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByText(/failed schema validation/)).toBeInTheDocument()
+    expect(submitReport).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByText('Error details'))
+    expect(screen.getByText(/must have required property 'github_username'/)).toBeInTheDocument()
   })
 
   it('shows the GitHubClientError message when submission fails', async () => {

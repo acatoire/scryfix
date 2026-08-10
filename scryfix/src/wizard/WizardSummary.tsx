@@ -6,6 +6,7 @@ import { UPSTREAM_REPO, describeGitHubError, submitReport } from '../lib/github'
 import type { ScryfallCard } from '../lib/scryfall'
 import { buildReport } from '../report/buildReport'
 import { downloadReportZip } from '../report/downloadReportZip'
+import { validateReport } from '../report/validateReport'
 import ImageLightbox from './ImageLightbox'
 import type { Attachment, WizardAnswers, WizardConfig } from './types'
 
@@ -68,11 +69,19 @@ function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummary
     setSubmitting(true)
     setSubmitError(null)
     setSubmitErrorDetail(null)
+    const reportToSubmit = { ...report, reporter: { github_username: githubUsername } }
+    const validation = await validateReport(reportToSubmit)
+    if (!validation.valid) {
+      setSubmitError('This report failed schema validation — that is a bug, not something you can fix here.')
+      setSubmitErrorDetail(validation.errors.join('\n'))
+      setSubmitting(false)
+      return
+    }
     try {
       const result = await submitReport({
         auth: getGitHubAuth(),
         upstream: UPSTREAM_REPO,
-        report: { ...report, reporter: { github_username: githubUsername } },
+        report: reportToSubmit,
         files,
       })
       setPrUrl(result.prUrl)

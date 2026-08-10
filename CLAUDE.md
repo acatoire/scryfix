@@ -20,6 +20,10 @@ CORS/CSP/rate-limits/scanning-guidelines for the Scryfall integration specifical
 [`doc/scryfall-integration.md`](doc/scryfall-integration.md) — read before touching `src/lib/scryfall.ts`'s
 rate-limit buckets or the CSP string in `vite.config.ts`.
 
+Report schema (`scryfix/schema/report.schema.json`) concept, versioning policy, and how
+`validateReport.ts` uses it: [`doc/report-schema.md`](doc/report-schema.md) — read before editing
+`src/report/types.ts` or the schema file, they must change together.
+
 Longer-lived notes only this project's history would know (decisions, gotchas, live-API quirks):
 [`ai/`](ai/) — read `ai/decisions.md` before touching the Scryfall client or the wizard/report engine.
 

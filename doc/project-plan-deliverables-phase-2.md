@@ -37,9 +37,16 @@ wizard already shipped in Phase 1.
    hand-rolled inline SVG, no chart library) read `stats/history.json`, appended daily by the new
    `.github/workflows/stats-snapshot.yml` — a static site can't compute "over time" live, so that file
    is the one piece of dashboard data that isn't fetched fresh from the API on every visit.)
-3. - [ ] Add a specific schema.json to trace history of reports schema evolution. Will allow in the future to make
+3. - [x] Add a specific schema.json to trace history of reports schema evolution. Will allow in the future to make
      migration task. This file will be used to validate the report.json file and will be updated when a new field is
      added or removed. We will try to have only one schema.json file for all wizards as long as possible.
+
+   (`scryfix/schema/report.schema.json` — one JSON Schema (draft 2020-12) for every wizard;
+   `additionalProperties: false` on everything except the deliberately-open `details` bag, so
+   `src/report/types.ts` and the schema must be edited together. `src/report/validateReport.ts`
+   validates before every submit (`WizardSummary.handleSubmit`, before `submitReport()`) — lazy-loads
+   `ajv/dist/2020` the same way `jszip` is lazy-loaded, to keep it out of the main bundle. Concept,
+   version-history table, and the "how to evolve it" process: `doc/report-schema.md`.)
 4. - [ ] Anti-spam checks from §4.2 (minimum wizard duration, minimum delay between submissions per account).
 
    Pulled via the GitHub API (Search API for PR counts, Contents/Trees API or a small scheduled GitHub Action that

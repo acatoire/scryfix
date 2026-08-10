@@ -55,7 +55,8 @@ export class ScryfallApiError extends Error {
 
 const API_BASE = 'https://api.scryfall.com'
 
-// Hard rate limits per https://scryfall.com/docs/api:
+// Hard rate limits per https://scryfall.com/docs/api/rate-limits (full breakdown, CORS/CSP notes,
+// and the not-yet-needed /cards/manifest bucket: doc/scryfall-integration.md):
 // /cards/search, /cards/named, /cards/random, /cards/collection -> 2/sec (500ms)
 // everything else -> 10/sec (100ms)
 type Bucket = 'throttled' | 'default'

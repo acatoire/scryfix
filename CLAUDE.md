@@ -16,6 +16,10 @@ before starting new work so you land on the next unchecked item rather than re-d
 Setup/commands/conventions: [`doc/developer-guide.md`](doc/developer-guide.md) — don't duplicate it here,
 just the highlights below.
 
+CORS/CSP/rate-limits/scanning-guidelines for the Scryfall integration specifically:
+[`doc/scryfall-integration.md`](doc/scryfall-integration.md) — read before touching `src/lib/scryfall.ts`'s
+rate-limit buckets or the CSP string in `vite.config.ts`.
+
 Longer-lived notes only this project's history would know (decisions, gotchas, live-API quirks):
 [`ai/`](ai/) — read `ai/decisions.md` before touching the Scryfall client or the wizard/report engine.
 

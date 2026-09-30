@@ -15,6 +15,19 @@ vi.mock('./components/CardLookup', () => ({
   ),
 }))
 
+vi.mock('./components/DuplicateCheck', () => ({
+  default: ({ onStart, onCancel }: { onStart: (id: string) => void; onCancel: () => void }) => (
+    <div>
+      <button type="button" onClick={() => onStart('missing_image_language')}>
+        stub-start-wizard
+      </button>
+      <button type="button" onClick={onCancel}>
+        stub-cancel-check
+      </button>
+    </div>
+  ),
+}))
+
 vi.mock('./wizard/WizardEngine', () => ({
   default: ({ card, onExit }: { card: ScryfallCard; onExit: () => void }) => (
     <div>
@@ -37,10 +50,20 @@ describe('App', () => {
     render(<App />)
 
     await userEvent.click(screen.getByText('stub-confirm-card'))
+    await userEvent.click(screen.getByText('stub-start-wizard'))
     expect(screen.getByText(`stub-wizard-for-${card.name}`)).toBeInTheDocument()
     expect(screen.queryByText('stub-confirm-card')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByText('stub-exit'))
+    expect(screen.getByText('stub-confirm-card')).toBeInTheDocument()
+  })
+
+  it('goes back to card lookup when the duplicate check is cancelled', async () => {
+    render(<App />)
+
+    await userEvent.click(screen.getByText('stub-confirm-card'))
+    await userEvent.click(screen.getByText('stub-cancel-check'))
+
     expect(screen.getByText('stub-confirm-card')).toBeInTheDocument()
   })
 })

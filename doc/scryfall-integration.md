@@ -42,7 +42,7 @@ default-src 'self';
 base-uri 'self';
 form-action 'self';
 object-src 'none';
-connect-src 'self' https://api.scryfall.com https://api.github.com https://raw.githubusercontent.com https://embed.scryfall.com;
+connect-src 'self' https://api.scryfall.com https://api.github.com https://raw.githubusercontent.com https://embed.scryfall.com [+ the CORS relay origin when VITE_CORS_RELAY_URL is set at build time];
 img-src 'self' blob: https://*.scryfall.io https://raw.githubusercontent.com;
 style-src 'self' https://embed.scryfall.com;
 script-src 'self' https://embed.scryfall.com;

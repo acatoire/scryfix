@@ -38,6 +38,7 @@ function AttachmentsStep({ step, value = [], onChange }: AttachmentsStepProps) {
         {step.label}
         {step.required && <span className="wizard-required"> (required)</span>}
       </span>
+      {step.help && <p className="github-connect-hint">{step.help}</p>}
 
       {value.length > 0 && (
         <ul className="wizard-attachments">

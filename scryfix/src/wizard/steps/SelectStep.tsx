@@ -7,12 +7,15 @@ interface SelectStepProps {
   onChange: (value: string) => void
 }
 
-const OPTIONS_SOURCES = {
-  scryfallLanguages: SCRYFALL_LANGUAGES.map((lang) => ({ value: lang.code, label: lang.name })),
+const LANGUAGE_OPTIONS = SCRYFALL_LANGUAGES.map((lang) => ({ value: lang.code, label: lang.name }))
+
+function optionsFor(step: SelectStepProps['step']): { value: string; label: string }[] {
+  if (step.options) return step.options.map((option) => ({ value: option, label: option }))
+  return LANGUAGE_OPTIONS
 }
 
 function SelectStep({ step, value, onChange }: SelectStepProps) {
-  const options = OPTIONS_SOURCES[step.optionsSource]
+  const options = optionsFor(step)
 
   return (
     <label className="wizard-field">

@@ -11,3 +11,44 @@
     gap: 18px;
   }
 }
+
+.duplicate-check-list {
+  text-align: left;
+  list-style: none;
+  padding: 0;
+}
+
+.duplicate-check-list li {
+  margin-bottom: 0.75rem;
+}
+
+.duplicate-check-status {
+  display: inline-block;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid currentColor;
+}
+
+.duplicate-check-open {
+  color: #b7791f;
+}
+
+.duplicate-check-merged {
+  color: #2f855a;
+}
+
+.external-databases {
+  text-align: left;
+  margin: 1rem 0;
+}
+
+.external-databases-option {
+  display: block;
+}
+
+.wizard-duplicate-warning {
+  text-align: left;
+  border-left: 3px solid #b7791f;
+  padding-left: 0.75rem;
+}

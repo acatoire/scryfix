@@ -2,6 +2,9 @@ import { defineConfig, type Plugin } from 'vitest/config'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 
+// The CORS relay origin (Device Flow, phase 3 item 5) is only allowed when configured at build time.
+const RELAY_ORIGIN = process.env.VITE_CORS_RELAY_URL ? ` ${new URL(process.env.VITE_CORS_RELAY_URL).origin}` : ''
+
 // See doc/scryfall-integration.md for the reasoning behind every origin listed here — update that
 // doc's table alongside this string whenever a new external call/asset is added.
 const CONTENT_SECURITY_POLICY = [
@@ -9,7 +12,7 @@ const CONTENT_SECURITY_POLICY = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  "connect-src 'self' https://api.scryfall.com https://api.github.com https://raw.githubusercontent.com https://embed.scryfall.com",
+  `connect-src 'self' https://api.scryfall.com https://api.github.com https://raw.githubusercontent.com https://embed.scryfall.com${RELAY_ORIGIN}`,
   "img-src 'self' blob: https://*.scryfall.io https://raw.githubusercontent.com",
   "style-src 'self' https://embed.scryfall.com",
   "script-src 'self' https://embed.scryfall.com",

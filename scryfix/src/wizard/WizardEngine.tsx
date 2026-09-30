@@ -3,22 +3,32 @@ import type { ScryfallCard } from '../lib/scryfall'
 import LanguagePreview from './LanguagePreview'
 import AttachmentsStep from './steps/AttachmentsStep'
 import SelectStep from './steps/SelectStep'
+import SetCodeStep from './steps/SetCodeStep'
 import TextareaStep from './steps/TextareaStep'
+import TextStep from './steps/TextStep'
 import UrlListStep from './steps/UrlListStep'
 import type { Attachment, WizardAnswers, WizardConfig, WizardStepDef } from './types'
 import { canSkipAsIncomplete, isStepAnswered } from './validation'
-import WizardSummary from './WizardSummary'
+import WizardSummary, { type BatchEntry, type SharedAnswers } from './WizardSummary'
 import './WizardEngine.css'
 
 interface WizardEngineProps {
   config: WizardConfig
   card: ScryfallCard
   onExit: () => void
+  // When the wizard started (ms epoch) — feeds the minimum-duration anti-spam gate. Defaults to
+  // mount time; ReportHome passes the batch's first start so extra cards don't reset the clock.
+  startedAt?: number
+  // Pre-filled answers for the 2nd+ card of a multi-card report (shared description/links).
+  initialAnswers?: WizardAnswers
+  batch?: BatchEntry[]
+  onAddCard?: (entry: BatchEntry, shared: SharedAnswers) => void
 }
 
-function WizardEngine({ config, card, onExit }: WizardEngineProps) {
+function WizardEngine({ config, card, onExit, startedAt, initialAnswers, batch = [], onAddCard }: WizardEngineProps) {
+  const [mountedAt] = useState(() => Date.now())
   const [stepIndex, setStepIndex] = useState(0)
-  const [answers, setAnswers] = useState<WizardAnswers>({})
+  const [answers, setAnswers] = useState<WizardAnswers>(initialAnswers ?? {})
   const [skipped, setSkipped] = useState<Record<string, boolean>>({})
   const [done, setDone] = useState(false)
 
@@ -42,7 +52,16 @@ function WizardEngine({ config, card, onExit }: WizardEngineProps) {
 
   if (done) {
     return (
-      <WizardSummary config={config} card={card} answers={answers} skipped={skipped} onExit={onExit} />
+      <WizardSummary
+        config={config}
+        card={card}
+        answers={answers}
+        skipped={skipped}
+        onExit={onExit}
+        startedAt={startedAt ?? mountedAt}
+        batch={batch}
+        onAddCard={onAddCard}
+      />
     )
   }
 
@@ -61,6 +80,34 @@ function WizardEngine({ config, card, onExit }: WizardEngineProps) {
         <div className="wizard-main">
           {step.kind === 'select' && (
             <SelectStep
+              step={step}
+              value={answers[step.id] as string | undefined}
+              onChange={(value) => setAnswer(step.id, value)}
+            />
+          )}
+          {step.kind === 'text' && (
+            <TextStep
+              step={step}
+              value={answers[step.id] as string | undefined}
+              onChange={(value) => setAnswer(step.id, value)}
+            />
+          )}
+          {step.kind === 'setCode' && (
+            <SetCodeStep
+              step={step}
+              value={answers[step.id] as string | undefined}
+              onChange={(value) => setAnswer(step.id, value)}
+            />
+          )}
+          {step.kind === 'text' && (
+            <TextStep
+              step={step}
+              value={answers[step.id] as string | undefined}
+              onChange={(value) => setAnswer(step.id, value)}
+            />
+          )}
+          {step.kind === 'setCode' && (
+            <SetCodeStep
               step={step}
               value={answers[step.id] as string | undefined}
               onChange={(value) => setAnswer(step.id, value)}

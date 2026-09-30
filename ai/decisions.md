@@ -228,3 +228,35 @@ list every set version, fetch the resolved card's own `prints_search_uri` separa
 — 10/sec (100ms). Enforced client-side via a per-bucket throttle queue in `src/lib/scryfall.ts`; route
 any new Scryfall endpoint through that module (`scryfallFetch`/`scryfallFetchUrl`) rather than calling
 `fetch` directly, so new calls inherit the throttling automatically.
+
+## Multi-card reports go out as one PR touching several report folders
+
+Phase 3 item 8. Chosen over "one PR per card" because reviewers see one issue as one PR. `submitReports()`
+in `src/lib/github.ts` commits every queued report into a single branch (named after the first report's
+id) and opens one PR; each card keeps its own `reports/{set}/{number}/` folder, so the one-issue-per-folder
+layout and the report schema are unchanged. `ReportHome` queues finished cards (`BatchEntry`) and
+pre-fills the next card's wizard with the shared description/links. Trade-off: a batch is all-or-nothing
+in review, and "Download report (.zip)" only bundles the current card.
+
+## Unlisted printings: the looked-up card is a sibling printing
+
+`unlisted_printing` reports a printing Scryfall doesn't have, so there is nothing to look up. The user
+looks up another printing of the same card; the wizard asks for the missing set code (verified against
+`/sets/{code}`), optional collector number and language. `buildReport` derives the
+`reports/_unlisted/{set}/{key}` folder key with a small synchronous FNV-1a hash (`unlistedKey`) so it
+stays pure and the same printing always lands in the same folder — which is what makes the duplicate
+check for `_unlisted` meaningful.
+
+## Device Flow needs a deployed relay; the PAT form stays as fallback
+
+`src/lib/deviceFlow.ts` + `relay/worker.js` implement §4.1, but the relay must be deployed by hand and
+`VITE_GITHUB_CLIENT_ID` / `VITE_CORS_RELAY_URL` set at build time (see `relay/README.md`). Until they are,
+`GitHubConnect` shows the dev PAT form, so nothing breaks in an unconfigured build. The relay origin is
+added to the production CSP `connect-src` in `vite.config.ts` only when configured.
+
+## "+1" on reports only covers open PRs; external database URLs are unverified guesses
+
+Merged reports have no tracking issue yet (still TBD in project-plan §8), so `confirmOpenReport()` only
+handles open PRs (👍 reaction + optional comment). The search URLs in `src/data/externalDatabases.ts`
+(mythic.tool, Gatherer, Cardmarket) were written from memory without being checked against the live
+sites — verify them before relying on the links.

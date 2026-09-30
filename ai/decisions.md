@@ -229,6 +229,15 @@ list every set version, fetch the resolved card's own `prints_search_uri` separa
 any new Scryfall endpoint through that module (`scryfallFetch`/`scryfallFetchUrl`) rather than calling
 `fetch` directly, so new calls inherit the throttling automatically.
 
+## Multi-card reports go out as one PR touching several report folders
+
+Phase 3 item 8. Chosen over "one PR per card" because reviewers see one issue as one PR. `submitReports()`
+in `src/lib/github.ts` commits every queued report into a single branch (named after the first report's
+id) and opens one PR; each card keeps its own `reports/{set}/{number}/` folder, so the one-issue-per-folder
+layout and the report schema are unchanged. `ReportHome` queues finished cards (`BatchEntry`) and
+pre-fills the next card's wizard with the shared description/links. Trade-off: a batch is all-or-nothing
+in review, and "Download report (.zip)" only bundles the current card.
+
 ## Unlisted printings: the looked-up card is a sibling printing
 
 `unlisted_printing` reports a printing Scryfall doesn't have, so there is nothing to look up. The user

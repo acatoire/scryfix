@@ -29,7 +29,7 @@ vi.mock('@octokit/rest', () => ({
   }),
 }))
 
-const { GitHubClientError, buildPrBody, confirmOpenReport, describeGitHubError, submitReport } =
+const { GitHubClientError, buildBatchPrBody, buildPrBody, confirmOpenReport, describeGitHubError, submitReport, submitReports } =
   await import('./github')
 
 function authWith(token: string | null): GitHubAuth {
@@ -227,6 +227,63 @@ describe('describeGitHubError', () => {
   it('falls back to a generic message for a non-Error thrown value', () => {
     const info = describeGitHubError('nope')
     expect(info).toEqual({ message: 'Could not submit to GitHub.', detail: 'nope' })
+  })
+})
+
+describe('submitReports (multi-card)', () => {
+  const upstream = { owner: 'org', repo: 'scryfix-reports' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockOctokit.repos.createFork.mockResolvedValue({ data: { owner: { login: 'me' }, name: 'scryfix-reports' } })
+    mockOctokit.repos.get.mockResolvedValue({ data: { default_branch: 'main' } })
+    mockOctokit.git.getRef.mockResolvedValue({ data: { object: { sha: 'base-sha' } } })
+    mockOctokit.pulls.create.mockResolvedValue({ data: { html_url: 'https://github.com/x/pull/9', number: 9 } })
+  })
+
+  it('bundles several report folders into one branch and one PR', async () => {
+    const second = { ...report, report_id: 'report-2', card: { ...report.card, collector_number: '184', name: 'Other' } }
+    const result = await submitReports({
+      auth: authWith('token'),
+      upstream,
+      reports: [
+        { report, files: [] },
+        { report: second, files: [] },
+      ],
+    })
+
+    const paths = mockOctokit.repos.createOrUpdateFileContents.mock.calls.map((call) => call[0].path)
+    expect(paths).toEqual(['reports/afc/183/report-1.json', 'reports/afc/184/report-2.json'])
+    expect(mockOctokit.git.createRef).toHaveBeenCalledTimes(1)
+    expect(mockOctokit.pulls.create).toHaveBeenCalledTimes(1)
+    expect(mockOctokit.pulls.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '[missing_image_language] 2 cards: Cold-Eyed Selkie, Other' }),
+    )
+    expect(result.prNumber).toBe(9)
+  })
+
+  it('truncates the card list in the title for large batches', async () => {
+    const many = ['A', 'B', 'C', 'D'].map((name, i) => ({
+      report: { ...report, report_id: `r${i}`, card: { ...report.card, name } },
+      files: [],
+    }))
+    await submitReports({ auth: authWith('token'), upstream, reports: many })
+    expect(mockOctokit.pulls.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '[missing_image_language] 4 cards: A, B, C…' }),
+    )
+  })
+
+  it('refuses an empty batch', async () => {
+    await expect(submitReports({ auth: authWith('token'), upstream, reports: [] })).rejects.toBeInstanceOf(
+      GitHubClientError,
+    )
+  })
+
+  it('builds a combined body listing every report', () => {
+    const body = buildBatchPrBody([report, { ...report, report_id: 'report-2' }])
+    expect(body).toContain('bundles **2 reports**')
+    expect(body).toContain('report-1')
+    expect(body).toContain('report-2')
   })
 })
 

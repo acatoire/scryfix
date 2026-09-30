@@ -2,7 +2,14 @@ import { useMemo, useState } from 'react'
 import GitHubConnect from '../components/GitHubConnect'
 import { SCRYFALL_LANGUAGES } from '../data/scryfallLanguages'
 import { getGitHubAuth } from '../lib/githubAuth'
+import {
+  checkSubmissionDelay,
+  checkWizardDuration,
+  submissionTooSoonMessage,
+  wizardTooFastMessage,
+} from '../lib/antiSpam'
 import { UPSTREAM_REPO, describeGitHubError, submitReport } from '../lib/github'
+import { getLastPullRequestDate } from '../lib/githubRead'
 import type { ScryfallCard } from '../lib/scryfall'
 import { buildReport } from '../report/buildReport'
 import { downloadReportZip } from '../report/downloadReportZip'
@@ -16,6 +23,8 @@ interface WizardSummaryProps {
   answers: WizardAnswers
   skipped: Record<string, boolean>
   onExit: () => void
+  // Anti-spam (doc/project-plan.md §4.2): the wizard must have been open for a minimum time.
+  startedAt?: number
 }
 
 function attachmentUrl(attachment: Attachment): string {
@@ -38,7 +47,7 @@ function formatValue(step: WizardConfig['steps'][number], value: WizardAnswers[s
   return urls.length > 0 ? urls.join(', ') : '—'
 }
 
-function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummaryProps) {
+function WizardSummary({ config, card, answers, skipped, onExit, startedAt = 0 }: WizardSummaryProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [githubUsername, setGithubUsername] = useState<string | null>(null)
@@ -69,6 +78,24 @@ function WizardSummary({ config, card, answers, skipped, onExit }: WizardSummary
     setSubmitting(true)
     setSubmitError(null)
     setSubmitErrorDetail(null)
+    const tooFast = checkWizardDuration(startedAt)
+    if (!tooFast.ok) {
+      setSubmitError(wizardTooFastMessage(tooFast.remainingMs))
+      setSubmitting(false)
+      return
+    }
+    try {
+      const lastPr = githubUsername ? await getLastPullRequestDate(UPSTREAM_REPO, githubUsername) : null
+      const tooSoon = checkSubmissionDelay(lastPr)
+      if (!tooSoon.ok) {
+        setSubmitError(submissionTooSoonMessage(tooSoon.remainingMs))
+        setSubmitting(false)
+        return
+      }
+    } catch {
+      // Search API unavailable/rate-limited: the gate is a soft, client-side check anyway — don't
+      // block a legitimate submission on a failed lookup.
+    }
     const reportToSubmit = { ...report, reporter: { github_username: githubUsername } }
     const validation = await validateReport(reportToSubmit)
     if (!validation.valid) {

@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeCard } from '../test-utils/scryfallFixtures'
 import { downloadReportZip } from '../report/downloadReportZip'
-import { GitHubClientError, submitReport } from '../lib/github'
+import { GitHubClientError, UPSTREAM_REPO, submitReport } from '../lib/github'
+import { getLastPullRequestDate } from '../lib/githubRead'
 import { validateReport } from '../report/validateReport'
 import type { Attachment } from './types'
 import WizardSummary from './WizardSummary'
@@ -16,6 +17,10 @@ vi.mock('../report/downloadReportZip', () => ({
 vi.mock('../lib/github', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../lib/github')>()),
   submitReport: vi.fn(),
+}))
+
+vi.mock('../lib/githubRead', () => ({
+  getLastPullRequestDate: vi.fn().mockResolvedValue(null),
 }))
 
 vi.mock('../lib/githubAuth', () => ({
@@ -272,5 +277,67 @@ describe('WizardSummary', () => {
     expect(await screen.findByText('GitHub API error 404: Not Found')).toBeInTheDocument()
     await userEvent.click(screen.getByText('Error details'))
     expect(screen.getByText(/documentation_url/, { selector: 'pre' })).toBeInTheDocument()
+  })
+
+  it('blocks submission when the wizard was completed too quickly', async () => {
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+        startedAt={Date.now()}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByText(/That was quick/)).toBeInTheDocument()
+    expect(getLastPullRequestDate).not.toHaveBeenCalled()
+    expect(validateReport).not.toHaveBeenCalled()
+    expect(submitReport).not.toHaveBeenCalled()
+  })
+
+  it('blocks submission when the account just opened another PR', async () => {
+    vi.mocked(getLastPullRequestDate).mockResolvedValueOnce(new Date().toISOString())
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByText(/please wait/)).toBeInTheDocument()
+    expect(getLastPullRequestDate).toHaveBeenCalledWith(UPSTREAM_REPO, 'octocat')
+    expect(validateReport).not.toHaveBeenCalled()
+    expect(submitReport).not.toHaveBeenCalled()
+  })
+
+  it('still submits when the last-PR lookup fails', async () => {
+    vi.mocked(getLastPullRequestDate).mockRejectedValueOnce(new Error('rate limited'))
+    vi.mocked(submitReport).mockResolvedValue({ prUrl: 'https://github.com/x/pull/2', prNumber: 2 })
+    render(
+      <WizardSummary
+        config={missingImageLanguageWizard}
+        card={card}
+        answers={{}}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit as GitHub PR' }))
+
+    expect(await screen.findByRole('link', { name: 'View the pull request' })).toBeInTheDocument()
+    expect(submitReport).toHaveBeenCalledTimes(1)
   })
 })

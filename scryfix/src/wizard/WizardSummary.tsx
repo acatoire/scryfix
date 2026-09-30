@@ -37,10 +37,11 @@ function attachmentLabel(attachment: Attachment): string {
 
 function formatValue(step: WizardConfig['steps'][number], value: WizardAnswers[string] | undefined) {
   if (step.kind === 'select') {
+    if (step.options) return typeof value === 'string' && value ? value : '—'
     const lang = SCRYFALL_LANGUAGES.find((l) => l.code === value)
     return lang ? `${lang.name} (${lang.code})` : '—'
   }
-  if (step.kind === 'textarea') {
+  if (step.kind === 'textarea' || step.kind === 'text' || step.kind === 'setCode') {
     return typeof value === 'string' && value.trim() ? value : '—'
   }
   const urls = (value as string[] | undefined) ?? []

@@ -36,6 +36,16 @@ describe('isStepAnswered', () => {
     expect(isStepAnswered(required, 'it is upside down')).toBe(true)
   })
 
+  it('text and setCode are only gated when required', () => {
+    for (const kind of ['text', 'setCode'] as const) {
+      const optional: WizardStepDef = { kind, id: 'x', label: 'X' }
+      expect(isStepAnswered(optional, undefined)).toBe(true)
+      const required: WizardStepDef = { kind, id: 'x', label: 'X', required: true }
+      expect(isStepAnswered(required, '')).toBe(false)
+      expect(isStepAnswered(required, 'woe')).toBe(true)
+    }
+  })
+
   it('attachments is only gated when required', () => {
     const optional: WizardStepDef = { kind: 'attachments', id: 'evidence', label: 'Evidence' }
     expect(isStepAnswered(optional, undefined)).toBe(true)

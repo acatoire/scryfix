@@ -228,3 +228,12 @@ list every set version, fetch the resolved card's own `prints_search_uri` separa
 — 10/sec (100ms). Enforced client-side via a per-bucket throttle queue in `src/lib/scryfall.ts`; route
 any new Scryfall endpoint through that module (`scryfallFetch`/`scryfallFetchUrl`) rather than calling
 `fetch` directly, so new calls inherit the throttling automatically.
+
+## Unlisted printings: the looked-up card is a sibling printing
+
+`unlisted_printing` reports a printing Scryfall doesn't have, so there is nothing to look up. The user
+looks up another printing of the same card; the wizard asks for the missing set code (verified against
+`/sets/{code}`), optional collector number and language. `buildReport` derives the
+`reports/_unlisted/{set}/{key}` folder key with a small synchronous FNV-1a hash (`unlistedKey`) so it
+stays pure and the same printing always lands in the same folder — which is what makes the duplicate
+check for `_unlisted` meaningful.

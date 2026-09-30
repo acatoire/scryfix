@@ -50,6 +50,18 @@ function buildAttachments(
   return { items, files }
 }
 
+// Stable short key for an unlisted printing's folder (reports/_unlisted/{set}/{key}) — FNV-1a, sync so
+// buildReport stays pure. Same inputs always land in the same folder, which is what lets the
+// duplicate check spot a repeated report.
+export function unlistedKey(cardName: string, setCode: string, collectorNumber: string, lang: string): string {
+  let hash = 0x811c9dc5
+  for (const char of `${cardName}|${setCode}|${collectorNumber}|${lang}`.toLowerCase()) {
+    hash ^= char.codePointAt(0)!
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash.toString(16).padStart(8, '0')
+}
+
 export interface BuildReportInput {
   reportId: string
   createdAt: string
@@ -62,6 +74,20 @@ export interface BuildReportInput {
 export interface BuildReportResult {
   report: Report
   files: { path: string; file: File }[]
+}
+
+function unlistedFor(wizard: WizardConfig, card: ScryfallCard, answers: WizardAnswers): Report['unlisted'] {
+  if (wizard.id !== 'unlisted_printing') {
+    return { is_unlisted: false, set_code: null, collector_number_hash: null }
+  }
+  const setCode = ((answers.set_code as string | undefined) ?? '').trim().toLowerCase()
+  const collectorNumber = ((answers.collector_number as string | undefined) ?? '').trim()
+  const lang = (answers.affected_language as string | undefined) ?? card.lang
+  return {
+    is_unlisted: true,
+    set_code: setCode,
+    collector_number_hash: unlistedKey(card.name, setCode, collectorNumber, lang),
+  }
 }
 
 export function buildReport({
@@ -90,7 +116,7 @@ export function buildReport({
     if (WELL_KNOWN_STEP_IDS.has(step.id)) continue
     // Only select/textarea produce plain serializable values; attachments/urlList steps outside
     // the well-known ids don't exist in any current wizard, so there's nothing to map yet.
-    if (step.kind === 'select' || step.kind === 'textarea') {
+    if (step.kind === 'select' || step.kind === 'textarea' || step.kind === 'text' || step.kind === 'setCode') {
       details[step.id] = answers[step.id] ?? null
     }
   }
@@ -110,11 +136,7 @@ export function buildReport({
       lang: card.lang,
       scryfall_url: card.scryfall_uri,
     },
-    unlisted: {
-      is_unlisted: false,
-      set_code: null,
-      collector_number_hash: null,
-    },
+    unlisted: unlistedFor(wizard, card, answers),
     details,
     description: ((answers.description as string | undefined) ?? '').trim(),
     evidence: evidence.items,

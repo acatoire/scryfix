@@ -1,9 +1,21 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import { getSet } from '../lib/scryfall'
 import { makeCard } from '../test-utils/scryfallFixtures'
 import WizardEngine from './WizardEngine'
 import { missingImageLanguageWizard } from './wizards/missingImageLanguage'
+import { unlistedPrintingWizard } from './wizards/unlistedPrinting'
+
+vi.mock('../lib/scryfall', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/scryfall')>()),
+  getSet: vi.fn(),
+  getCardLanguages: vi.fn().mockResolvedValue([]),
+}))
+
+vi.mock('../lib/duplicates', () => ({
+  findRelatedUnlistedReports: vi.fn().mockResolvedValue([]),
+}))
 
 const card = makeCard()
 
@@ -94,5 +106,24 @@ describe('WizardEngine', () => {
       screen.getByRole('heading', { name: `Review: ${missingImageLanguageWizard.title}` }),
     ).toBeInTheDocument()
     expect(screen.getByText(/Incomplete report/)).toBeInTheDocument()
+  })
+
+  it('renders text and setCode steps (once each) for the unlisted_printing wizard', async () => {
+    vi.mocked(getSet).mockResolvedValue({ code: 'woe', name: 'Wilds of Eldraine', set_type: 'expansion' })
+    render(<WizardEngine config={unlistedPrintingWizard} card={card} onExit={() => {}} />)
+
+    // step 1: setCode — Next stays disabled until Scryfall confirms the set
+    expect(screen.getAllByLabelText(/Set code of the missing printing/)).toHaveLength(1)
+    expect(nextButton()).toBeDisabled()
+    await userEvent.type(screen.getByLabelText(/Set code of the missing printing/), 'woe')
+    await userEvent.click(screen.getByRole('button', { name: 'Verify set' }))
+    expect(await screen.findByText('Found set: Wilds of Eldraine')).toBeInTheDocument()
+    await userEvent.click(nextButton())
+
+    // step 2: optional text
+    expect(screen.getAllByLabelText(/Collector number/)).toHaveLength(1)
+    await userEvent.type(screen.getByLabelText(/Collector number/), '287')
+    await userEvent.click(nextButton())
+    expect(screen.getByText('Step 3 of 6')).toBeInTheDocument()
   })
 })

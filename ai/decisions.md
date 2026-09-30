@@ -237,3 +237,10 @@ looks up another printing of the same card; the wizard asks for the missing set 
 `reports/_unlisted/{set}/{key}` folder key with a small synchronous FNV-1a hash (`unlistedKey`) so it
 stays pure and the same printing always lands in the same folder — which is what makes the duplicate
 check for `_unlisted` meaningful.
+
+## mythic.tool search URL is unverified; multi-database compare was cancelled
+
+`MythicToolCheck` (phase 3 item 6) links to `https://mythic.tool/?q={card name}`. That URL was written
+from memory without checking the live site — verify it before relying on the link. Phase 3 item 9 (extend
+the checkbox into a multi-database compare tool, e.g. Gatherer/Cardmarket) was cancelled: keep the single
+mythic.tool checkbox, no database registry.

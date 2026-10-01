@@ -254,6 +254,13 @@ from memory without checking the live site — verify it before relying on the l
 the checkbox into a multi-database compare tool, e.g. Gatherer/Cardmarket) was cancelled: keep the single
 mythic.tool checkbox, no database registry.
 
+## Device Flow needs a deployed relay; the PAT form stays as fallback
+
+`src/lib/deviceFlow.ts` + `relay/worker.js` implement §4.1, but the relay must be deployed by hand and
+`VITE_GITHUB_CLIENT_ID` / `VITE_CORS_RELAY_URL` set at build time (see `relay/README.md`). Until they are,
+`GitHubConnect` shows the dev PAT form, so nothing breaks in an unconfigured build. The relay origin is
+added to the production CSP `connect-src` in `vite.config.ts` only when configured.
+
 ## "+1" on reports only covers open PRs
 
 Merged reports have no tracking issue yet (still TBD in project-plan §8), so `confirmOpenReport()` only

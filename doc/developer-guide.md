@@ -34,6 +34,7 @@ Run from `scryfix`:
 scryfix/                       # repo root
 ├── ai/                         # durable AI-agent memory (decisions, gotchas) — see ai/README.md
 ├── doc/                        # project plan, phase deliverables, this guide
+├── relay/                      # stateless CORS relay (Cloudflare Worker) for GitHub Device Flow — see relay/README.md
 ├── reports/                    # (future) submitted report data lives here once GitHub write flow ships
 └── scryfix/                    # the actual React + Vite app — cd here for everything below
     ├── src/
@@ -79,3 +80,8 @@ scryfix/                       # repo root
 manual dispatch). `vite.config.ts` sets `base: '/scryfix/'` for production builds only — the dev server still serves
 from `/`. One-time repo setting required: Settings → Pages → Source → **GitHub Actions**. Once live, the URL goes in the
 root README's "Website" field.
+
+Build-time env vars (optional): `VITE_GITHUB_CLIENT_ID` (GitHub OAuth App with Device Flow enabled) and
+`VITE_CORS_RELAY_URL` (the deployed `relay/` Worker) switch the sign-in step from the dev PAT form to real Device Flow,
+and add the relay origin to the production CSP `connect-src`. Leave both unset to keep the PAT form. Deploying the relay
+and registering the OAuth App are manual steps — see [`relay/README.md`](../relay/README.md).

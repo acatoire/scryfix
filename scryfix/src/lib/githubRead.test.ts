@@ -5,6 +5,9 @@ const mockOctokit = {
     list: vi.fn(),
     listFiles: vi.fn(),
   },
+  search: {
+    issuesAndPullRequests: vi.fn(),
+  },
 }
 
 vi.mock('@octokit/rest', () => ({
@@ -15,7 +18,7 @@ vi.mock('@octokit/rest', () => ({
 
 const originalFetch = global.fetch
 
-const { findReportJsonPath, getRawJson, getStatsHistory, listOpenPullRequests, rawFileUrl } =
+const { findReportJsonPath, getLastPullRequestDate, getRawJson, getStatsHistory, listOpenPullRequests, rawFileUrl } =
   await import('./githubRead')
 
 const upstream = { owner: 'acatoire', repo: 'scryfix' }
@@ -139,6 +142,23 @@ describe('githubRead', () => {
     it('returns an empty array when the history file does not exist yet', async () => {
       global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 })
       expect(await getStatsHistory(upstream)).toEqual([])
+    })
+  })
+
+  describe('getLastPullRequestDate', () => {
+    it('returns the newest PR creation date for the author', async () => {
+      mockOctokit.search.issuesAndPullRequests.mockResolvedValue({
+        data: { items: [{ created_at: '2026-01-01T00:00:00Z' }] },
+      })
+      expect(await getLastPullRequestDate(upstream, 'me')).toBe('2026-01-01T00:00:00Z')
+      expect(mockOctokit.search.issuesAndPullRequests).toHaveBeenCalledWith(
+        expect.objectContaining({ q: expect.stringContaining('author:me') }),
+      )
+    })
+
+    it('returns null when the author has no PRs', async () => {
+      mockOctokit.search.issuesAndPullRequests.mockResolvedValue({ data: { items: [] } })
+      expect(await getLastPullRequestDate(upstream, 'me')).toBeNull()
     })
   })
 })

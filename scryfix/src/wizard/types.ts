@@ -9,7 +9,9 @@ export interface Attachment {
 }
 
 export type WizardStepDef =
-  | { kind: 'select'; id: string; label: string; optionsSource: 'scryfallLanguages' }
+  | { kind: 'select'; id: string; label: string; optionsSource?: 'scryfallLanguages'; options?: string[] }
+  | { kind: 'text'; id: string; label: string; required?: boolean; placeholder?: string }
+  | { kind: 'setCode'; id: string; label: string; required?: boolean }
   | { kind: 'textarea'; id: string; label: string; required?: boolean }
   | { kind: 'attachments'; id: string; label: string; required?: boolean; help?: string }
   | { kind: 'urlList'; id: string; label: string }

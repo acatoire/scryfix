@@ -54,8 +54,9 @@ Four areas, each independently testable via pure functions kept out of React com
   real language list, not by shape (English URLs omit the lang segment entirely; a short slug can
   otherwise look like a lang code — see `ai/decisions.md`).
 - **`src/wizard/`** — the JSON-config-driven wizard engine (doc/project-plan.md §5). `types.ts` defines
-  the step-kind union (`select` / `textarea` / `attachments` / `urlList`); a wizard is just a
-  `WizardConfig` object (see `wizards/missingImageLanguage.ts`) — new wizards add a config file, not
+  the step-kind union (`select` / `text` / `setCode` / `textarea` / `attachments` / `urlList`); a
+  wizard is just a `WizardConfig` object (see `wizards/missingImageLanguage.ts`) registered in
+  `wizards/index.ts` — new wizards add a config file, not
   engine code. `validation.ts` holds the pure required-field logic (including the "submit as
   incomplete" skip for a required attachments step) so it's testable without mounting a component.
   `WizardEngine.tsx` steps through the config; `WizardSummary.tsx` is the review screen.

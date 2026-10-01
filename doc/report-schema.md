@@ -32,7 +32,7 @@ source of truth for the *what*.
   `import Ajv2020 from 'ajv/dist/2020'` added ~37KB gzip to the main bundle for every visitor, most of whom never submit
   a report. Compiling the validator on every call (instead of caching the compiled function at module scope) is a small,
   one-time cost per submit attempt — not a hot path, so this trade favors bundle size.
-- **Wired into `WizardSummary.tsx`'s `handleSubmit()`**, *before* `submitReport()` is ever called. A failing validation
+- **Wired into `WizardSummary.tsx`'s `handleSubmit()`**, *before* `submitReports()` is ever called (every report of a multi-card batch is validated). A failing validation
   shows the same error+"Error details" accordion UI used for a GitHub API failure (see `src/lib/github.ts`'s
   `describeGitHubError`), listing every ajv error message — but the report never reaches the network. This is a
   bug-catcher, not a user-facing validation step: if it ever fires for a real user, that means `buildReport()` produced

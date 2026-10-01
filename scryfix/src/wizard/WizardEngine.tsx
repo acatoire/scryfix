@@ -9,7 +9,7 @@ import TextStep from './steps/TextStep'
 import UrlListStep from './steps/UrlListStep'
 import type { Attachment, WizardAnswers, WizardConfig, WizardStepDef } from './types'
 import { canSkipAsIncomplete, isStepAnswered } from './validation'
-import WizardSummary from './WizardSummary'
+import WizardSummary, { type BatchEntry, type SharedAnswers } from './WizardSummary'
 import './WizardEngine.css'
 
 interface WizardEngineProps {
@@ -17,14 +17,19 @@ interface WizardEngineProps {
   card: ScryfallCard
   onExit: () => void
   // When the wizard started (ms epoch) — feeds the minimum-duration anti-spam gate. Defaults to
-  // mount time; ReportHome passes the card-confirmation time so the duplicate check counts too.
+  // mount time; ReportHome passes the card-confirmation time of the batch's first card, so the
+  // duplicate check counts too and extra cards don't reset the clock.
   startedAt?: number
+  // Pre-filled answers for the 2nd+ card of a multi-card report (shared description/links).
+  initialAnswers?: WizardAnswers
+  batch?: BatchEntry[]
+  onAddCard?: (entry: BatchEntry, shared: SharedAnswers) => void
 }
 
-function WizardEngine({ config, card, onExit, startedAt }: WizardEngineProps) {
+function WizardEngine({ config, card, onExit, startedAt, initialAnswers, batch = [], onAddCard }: WizardEngineProps) {
   const [mountedAt] = useState(() => Date.now())
   const [stepIndex, setStepIndex] = useState(0)
-  const [answers, setAnswers] = useState<WizardAnswers>({})
+  const [answers, setAnswers] = useState<WizardAnswers>(initialAnswers ?? {})
   const [skipped, setSkipped] = useState<Record<string, boolean>>({})
   const [done, setDone] = useState(false)
 
@@ -55,6 +60,8 @@ function WizardEngine({ config, card, onExit, startedAt }: WizardEngineProps) {
         skipped={skipped}
         onExit={onExit}
         startedAt={startedAt ?? mountedAt}
+        batch={batch}
+        onAddCard={onAddCard}
       />
     )
   }

@@ -270,3 +270,29 @@ export async function submitReport({
   )
   return { prUrl: pr.url, prNumber: pr.number }
 }
+
+// "+1" on an open report PR (doc/project-plan.md §4.4): a 👍 reaction plus an optional short
+// comment — no new file, no new PR.
+export async function confirmOpenReport(
+  auth: GitHubAuth,
+  upstream: GitHubTarget,
+  prNumber: number,
+  comment: string,
+): Promise<void> {
+  const octokit = octokitFor(auth)
+  await octokit.reactions.createForIssue({
+    owner: upstream.owner,
+    repo: upstream.repo,
+    issue_number: prNumber,
+    content: '+1',
+  })
+  const trimmed = comment.trim()
+  if (trimmed) {
+    await octokit.issues.createComment({
+      owner: upstream.owner,
+      repo: upstream.repo,
+      issue_number: prNumber,
+      body: trimmed,
+    })
+  }
+}

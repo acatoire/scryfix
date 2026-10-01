@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { findRelatedReports, type RelatedReport } from '../lib/duplicates'
-import { UPSTREAM_REPO } from '../lib/github'
+import { UPSTREAM_REPO, confirmOpenReport, describeGitHubError } from '../lib/github'
+import { getGitHubAuth } from '../lib/githubAuth'
 import type { ScryfallCard } from '../lib/scryfall'
 import { WIZARDS } from '../wizard/wizards'
+import GitHubConnect from './GitHubConnect'
 import MythicToolCheck from './MythicToolCheck'
 
 interface DuplicateCheckProps {
@@ -14,10 +16,16 @@ interface DuplicateCheckProps {
 type Lookup = { kind: 'loading' } | { kind: 'error' } | { kind: 'done'; reports: RelatedReport[] }
 
 // Runs right after card lookup, before a wizard is chosen (doc/project-plan.md §4.3): shows what is
-// already known about the card so the user can spot a duplicate before filing a new report.
+// already known about the card, lets the user "+1" an open report instead of filing a duplicate
+// (§4.4), and offers a mythic.tool search.
 function DuplicateCheck({ card, onStart, onCancel }: DuplicateCheckProps) {
   const [lookup, setLookup] = useState<Lookup>({ kind: 'loading' })
   const [wizardId, setWizardId] = useState(WIZARDS[0].id)
+  const [confirming, setConfirming] = useState<number | null>(null)
+  const [signedIn, setSignedIn] = useState(() => Boolean(getGitHubAuth().getToken()))
+  const [comment, setComment] = useState('')
+  const [confirmed, setConfirmed] = useState<Set<number>>(new Set())
+  const [confirmError, setConfirmError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -28,6 +36,18 @@ function DuplicateCheck({ card, onStart, onCancel }: DuplicateCheckProps) {
       cancelled = true
     }
   }, [card])
+
+  async function sendConfirmation(prNumber: number) {
+    setConfirmError(null)
+    try {
+      await confirmOpenReport(getGitHubAuth(), UPSTREAM_REPO, prNumber, comment)
+      setConfirmed((prev) => new Set(prev).add(prNumber))
+      setConfirming(null)
+      setComment('')
+    } catch (err) {
+      setConfirmError(describeGitHubError(err).message)
+    }
+  }
 
   return (
     <div className="duplicate-check">
@@ -53,6 +73,32 @@ function DuplicateCheck({ card, onStart, onCancel }: DuplicateCheckProps) {
                 {related.title}
               </a>
               {related.errorType && <span> ({related.errorType})</span>}
+              {related.prNumber !== null &&
+                (confirmed.has(related.prNumber) ? (
+                  <span> — thanks for confirming!</span>
+                ) : (
+                  <button type="button" onClick={() => setConfirming(related.prNumber)}>
+                    👍 Still present
+                  </button>
+                ))}
+              {related.prNumber !== null && confirming === related.prNumber && (
+                <div className="duplicate-check-confirm">
+                  {signedIn ? (
+                    <>
+                      <label className="wizard-field">
+                        Add a short comment (optional)
+                        <textarea rows={2} value={comment} onChange={(event) => setComment(event.target.value)} />
+                      </label>
+                      <button type="button" onClick={() => void sendConfirmation(related.prNumber!)}>
+                        Send confirmation
+                      </button>
+                    </>
+                  ) : (
+                    <GitHubConnect onConnected={() => setSignedIn(true)} />
+                  )}
+                  {confirmError && <p className="wizard-error">{confirmError}</p>}
+                </div>
+              )}
             </li>
           ))}
         </ul>

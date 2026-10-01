@@ -244,3 +244,8 @@ check for `_unlisted` meaningful.
 from memory without checking the live site — verify it before relying on the link. Phase 3 item 9 (extend
 the checkbox into a multi-database compare tool, e.g. Gatherer/Cardmarket) was cancelled: keep the single
 mythic.tool checkbox, no database registry.
+
+## "+1" on reports only covers open PRs
+
+Merged reports have no tracking issue yet (still TBD in project-plan §8), so `confirmOpenReport()` only
+handles open PRs (👍 reaction + optional comment).

@@ -36,4 +36,19 @@ describe('SelectStep', () => {
     render(<SelectStep step={step} value="fr" onChange={() => {}} />)
     expect(screen.getByRole('combobox')).toHaveValue('fr')
   })
+
+  it('uses static options when the step provides them', async () => {
+    const onChange = vi.fn()
+    render(
+      <SelectStep
+        step={{ kind: 'select', id: 'category_hint', label: 'Category', options: ['Type line', 'Other'] }}
+        value={undefined}
+        onChange={onChange}
+      />,
+    )
+
+    expect(screen.queryByRole('option', { name: 'French' })).not.toBeInTheDocument()
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'Type line')
+    expect(onChange).toHaveBeenCalledWith('Type line')
+  })
 })

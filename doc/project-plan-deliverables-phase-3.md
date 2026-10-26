@@ -2,11 +2,11 @@
 
 Each can be built and shipped on its own, in any order, once Phase 2's GitHub write path is working end-to-end:
 
-1. - [ ] **Additional wizards**: `wrong_image_language`.
-2. - [ ] **Additional wizards**: `other` — fallback wizard for generic reports (moved from Phase 1, §5.4).
-3. - [ ] **Duplicate/related-report check** (merged + open PRs) — surfaces existing reports on a card before/while filling the
+1. - [x] **Additional wizards**: `wrong_image_language`.
+2. - [x] **Additional wizards**: `other` — fallback wizard for generic reports (moved from Phase 1, §5.4).
+3. - [x] **Duplicate/related-report check** (merged + open PRs) — surfaces existing reports on a card before/while filling the
    wizard, per §4.3.
-4. - [ ] **Additional wizards**: `unlisted_printing`.
+4. - [x] **Additional wizards**: `unlisted_printing`.
 5. - [ ] **CORS relay + real Device Flow auth** (§4.1) — deploy the stateless CORS-relay function (Cloudflare Worker or
       equivalent) and swap the step-1 PAT stand-in for actual Device Flow (code + link, polling through the relay,
       mandatory sign-in gate, no anonymous PRs). Last step because it's the one piece with an external deploy dependency;
@@ -34,3 +34,9 @@ already exist.
 Beyond these six, other wizard candidates (not yet scoped): wrong rules text, wrong mana cost/color identity,
 pricing/rarity errors, duplicate entries — same mechanism, just new wizard definitions, whenever you want to schedule
 them.
+
+## Implementation notes
+
+- Items 1, 2, 4: `src/wizard/wizards/` (registry in `index.ts`); new step kinds `text` and `setCode`, and `select`
+  now accepts static `options`. `unlisted_printing` fills the report's `unlisted` block (see `ai/decisions.md`).
+- Item 3: `src/lib/duplicates.ts` + `src/components/DuplicateCheck.tsx`, shown between card lookup and wizard.

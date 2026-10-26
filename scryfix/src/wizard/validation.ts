@@ -11,6 +11,8 @@ export function isStepAnswered(
   switch (step.kind) {
     case 'select':
       return typeof value === 'string' && value.trim().length > 0
+    case 'text':
+    case 'setCode':
     case 'textarea':
       return !step.required || (typeof value === 'string' && value.trim().length > 0)
     case 'attachments':

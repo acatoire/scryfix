@@ -3,7 +3,9 @@ import type { ScryfallCard } from '../lib/scryfall'
 import LanguagePreview from './LanguagePreview'
 import AttachmentsStep from './steps/AttachmentsStep'
 import SelectStep from './steps/SelectStep'
+import SetCodeStep from './steps/SetCodeStep'
 import TextareaStep from './steps/TextareaStep'
+import TextStep from './steps/TextStep'
 import UrlListStep from './steps/UrlListStep'
 import type { Attachment, WizardAnswers, WizardConfig, WizardStepDef } from './types'
 import { canSkipAsIncomplete, isStepAnswered } from './validation'
@@ -15,7 +17,7 @@ interface WizardEngineProps {
   card: ScryfallCard
   onExit: () => void
   // When the wizard started (ms epoch) — feeds the minimum-duration anti-spam gate. Defaults to
-  // mount time, i.e. card confirmation.
+  // mount time; ReportHome passes the card-confirmation time so the duplicate check counts too.
   startedAt?: number
 }
 
@@ -72,6 +74,20 @@ function WizardEngine({ config, card, onExit, startedAt }: WizardEngineProps) {
         <div className="wizard-main">
           {step.kind === 'select' && (
             <SelectStep
+              step={step}
+              value={answers[step.id] as string | undefined}
+              onChange={(value) => setAnswer(step.id, value)}
+            />
+          )}
+          {step.kind === 'text' && (
+            <TextStep
+              step={step}
+              value={answers[step.id] as string | undefined}
+              onChange={(value) => setAnswer(step.id, value)}
+            />
+          )}
+          {step.kind === 'setCode' && (
+            <SetCodeStep
               step={step}
               value={answers[step.id] as string | undefined}
               onChange={(value) => setAnswer(step.id, value)}

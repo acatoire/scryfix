@@ -191,3 +191,16 @@ export async function getCardLanguages(card: ScryfallCard): Promise<ScryfallCard
   byLang.set(card.lang, card)
   return [...byLang.values()].sort((a, b) => a.lang.localeCompare(b.lang))
 }
+
+export interface ScryfallSet {
+  code: string
+  name: string
+  set_type: string
+  released_at?: string
+}
+
+// Confirms a set code exists on Scryfall (used by the unlisted_printing wizard — the set may exist
+// even when the exact printing doesn't). Throws ScryfallApiError (404) for an unknown code.
+export function getSet(code: string): Promise<ScryfallSet> {
+  return scryfallFetch<ScryfallSet>(`/sets/${encodeURIComponent(code.trim().toLowerCase())}`, 'default')
+}

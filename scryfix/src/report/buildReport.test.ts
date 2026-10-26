@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { ScryfallCard } from '../lib/scryfall'
 import type { Attachment } from '../wizard/types'
 import { missingImageLanguageWizard } from '../wizard/wizards/missingImageLanguage'
-import { buildReport } from './buildReport'
+import { otherWizard } from '../wizard/wizards/other'
+import { unlistedPrintingWizard } from '../wizard/wizards/unlistedPrinting'
+import { wrongImageLanguageWizard } from '../wizard/wizards/wrongImageLanguage'
+import { buildReport, unlistedKey } from './buildReport'
 
 const card: ScryfallCard = {
   id: 'abc-123',
@@ -111,5 +114,50 @@ describe('buildReport', () => {
     const { report } = buildReport({ ...baseInput, answers: {} })
     expect(report.incomplete).toBe(false)
     expect(report.missing).toEqual([])
+  })
+})
+
+describe('buildReport — other wizards', () => {
+  it('puts wrong_image_language selects into details', () => {
+    const { report } = buildReport({
+      ...baseInput,
+      wizard: wrongImageLanguageWizard,
+      answers: { shown_as_language: 'en', should_be_language: 'fr' },
+    })
+    expect(report.error_type).toBe('wrong_image_language')
+    expect(report.details).toEqual({ shown_as_language: 'en', should_be_language: 'fr' })
+    expect(report.unlisted.is_unlisted).toBe(false)
+  })
+
+  it('maps the other wizard category and description', () => {
+    const { report } = buildReport({
+      ...baseInput,
+      wizard: otherWizard,
+      answers: { category_hint: 'Type line', description: ' wrong type ' },
+    })
+    expect(report.details).toEqual({ category_hint: 'Type line' })
+    expect(report.description).toBe('wrong type')
+  })
+
+  it('fills the unlisted block with a stable folder key', () => {
+    const answers = { set_code: ' WOE ', collector_number: '999', affected_language: 'fr' }
+    const { report } = buildReport({ ...baseInput, wizard: unlistedPrintingWizard, answers })
+    expect(report.unlisted).toEqual({
+      is_unlisted: true,
+      set_code: 'woe',
+      collector_number_hash: unlistedKey('Cold-Eyed Selkie', 'woe', '999', 'fr'),
+    })
+    expect(report.details).toMatchObject({ set_code: ' WOE ', collector_number: '999' })
+    expect(unlistedKey('a', 'b', 'c', 'd')).toMatch(/^[0-9a-f]{8}$/)
+    expect(unlistedKey('a', 'b', 'c', 'd')).not.toBe(unlistedKey('a', 'b', '', 'd'))
+  })
+
+  it('falls back to the card language and empty number for unlisted', () => {
+    const { report } = buildReport({
+      ...baseInput,
+      wizard: unlistedPrintingWizard,
+      answers: { set_code: 'woe' },
+    })
+    expect(report.unlisted.collector_number_hash).toBe(unlistedKey('Cold-Eyed Selkie', 'woe', '', 'en'))
   })
 })

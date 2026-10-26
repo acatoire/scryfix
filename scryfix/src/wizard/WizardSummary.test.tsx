@@ -9,6 +9,8 @@ import { validateReport } from '../report/validateReport'
 import type { Attachment } from './types'
 import WizardSummary from './WizardSummary'
 import { missingImageLanguageWizard } from './wizards/missingImageLanguage'
+import { otherWizard } from './wizards/other'
+import { unlistedPrintingWizard } from './wizards/unlistedPrinting'
 
 vi.mock('../report/downloadReportZip', () => ({
   downloadReportZip: vi.fn(),
@@ -70,6 +72,34 @@ describe('WizardSummary', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('French (fr)')).toBeInTheDocument()
     expect(screen.getByText('looks wrong')).toBeInTheDocument()
+  })
+
+  it('formats text, setCode and static-option select answers as-is', () => {
+    render(
+      <WizardSummary
+        config={unlistedPrintingWizard}
+        card={card}
+        answers={{ set_code: 'woe', collector_number: '287', affected_language: 'fr' }}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+    expect(screen.getByText('woe')).toBeInTheDocument()
+    expect(screen.getByText('287')).toBeInTheDocument()
+    expect(screen.getByText('French (fr)')).toBeInTheDocument()
+  })
+
+  it('shows the chosen static option of a select step', () => {
+    render(
+      <WizardSummary
+        config={otherWizard}
+        card={card}
+        answers={{ category_hint: 'Type line', description: 'wrong type' }}
+        skipped={{}}
+        onExit={() => {}}
+      />,
+    )
+    expect(screen.getByText('Type line')).toBeInTheDocument()
   })
 
   it('shows an incomplete banner and per-row tag when a required step was skipped', () => {

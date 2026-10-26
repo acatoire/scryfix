@@ -213,6 +213,16 @@ describe('API calls', () => {
     })
   })
 
+  it('fetches a set by its trimmed, lower-cased code', async () => {
+    const { getSet } = await freshScryfall()
+    const set = { code: 'woe', name: 'Wilds of Eldraine', set_type: 'expansion' }
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(set))
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await getSet(' WOE ')).toEqual(set)
+    expect(fetchMock).toHaveBeenCalledWith('https://api.scryfall.com/sets/woe', expect.anything())
+  })
+
   it('fetches all prints via the card prints_search_uri and sorts newest first', async () => {
     const { getCardPrints } = await freshScryfall()
     const older = { ...cardFixture, id: 'old', set: 'lea', released_at: '1993-08-05' }

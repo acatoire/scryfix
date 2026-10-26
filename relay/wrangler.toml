@@ -1,0 +1,7 @@
+name = "scryfix-cors-relay"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Origin of the deployed site (no path, no trailing slash).
+ALLOWED_ORIGIN = "https://acatoire.github.io"

@@ -41,6 +41,9 @@ them.
 - Items 1, 2, 4: `src/wizard/wizards/` (registry in `index.ts`); new step kinds `text` and `setCode`, and `select`
   now accepts static `options`. `unlisted_printing` fills the report's `unlisted` block (see `ai/decisions.md`).
 - Item 3: `src/lib/duplicates.ts` + `src/components/DuplicateCheck.tsx`, shown between card lookup and wizard.
+- Item 5: **code done, deployment still open** — `src/lib/deviceFlow.ts`, `relay/` (Cloudflare Worker), and
+  `GitHubConnect` switches to Device Flow once `VITE_GITHUB_CLIENT_ID` / `VITE_CORS_RELAY_URL` are set. The relay
+  still has to be deployed and an OAuth App registered (`relay/README.md`); tick this box when that is done.
 - Item 6: `src/components/MythicToolCheck.tsx`, rendered in `DuplicateCheck` below the known-reports list. The
   mythic.tool search URL (`https://mythic.tool/?q={name}`) is unverified (see `ai/decisions.md`).
 - Item 7: open PRs only (`confirmOpenReport()` — 👍 + optional comment); merged reports have no tracking issue yet.

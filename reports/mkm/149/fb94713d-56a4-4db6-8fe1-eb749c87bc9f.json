@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "report_id": "fb94713d-56a4-4db6-8fe1-eb749c87bc9f",
+  "created_at": "2026-08-09T17:08:53.791Z",
+  "error_type": "missing_image_language",
+  "card": {
+    "set": "mkm",
+    "collector_number": "149",
+    "scryfall_id": "ceda6097-110d-4813-9920-36117d569495",
+    "name": "Airtight Alibi",
+    "lang": "pt",
+    "scryfall_url": "https://scryfall.com/card/mkm/149/pt/%C3%A1libi-incontest%C3%A1vel-(airtight-alibi)?utm_source=api"
+  },
+  "unlisted": {
+    "is_unlisted": false,
+    "set_code": null,
+    "collector_number_hash": null
+  },
+  "details": {
+    "affected_language": "fr"
+  },
+  "description": "",
+  "evidence": [],
+  "fix_files": [],
+  "external_refs": [],
+  "reporter": {
+    "github_username": "acatoire"
+  },
+  "incomplete": true,
+  "missing": [
+    "fix_files"
+  ]
+}

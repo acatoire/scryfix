@@ -4,9 +4,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeCard } from '../test-utils/scryfallFixtures'
 
 const findRelatedReports = vi.fn()
+const confirmOpenReport = vi.fn()
+let token: string | null = null
 
 vi.mock('../lib/duplicates', () => ({
   findRelatedReports: (...args: unknown[]) => findRelatedReports(...args),
+}))
+vi.mock('../lib/github', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/github')>()),
+  confirmOpenReport: (...args: unknown[]) => confirmOpenReport(...args),
+}))
+vi.mock('../lib/githubAuth', () => ({
+  getGitHubAuth: () => ({ getToken: () => token, setToken: vi.fn() }),
+}))
+vi.mock('./GitHubConnect', () => ({
+  default: ({ onConnected }: { onConnected: (username: string) => void }) => (
+    <button type="button" onClick={() => onConnected('octocat')}>
+      Fake connect
+    </button>
+  ),
 }))
 
 import DuplicateCheck from './DuplicateCheck'
@@ -23,6 +39,7 @@ const mergedReport = { status: 'merged', title: 'a.json', url: 'https://gh/a.jso
 
 beforeEach(() => {
   vi.clearAllMocks()
+  token = null
 })
 
 describe('DuplicateCheck', () => {
@@ -85,5 +102,38 @@ describe('DuplicateCheck', () => {
     render(<DuplicateCheck card={card} onStart={() => {}} onCancel={onCancel} />)
     await userEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onCancel).toHaveBeenCalled()
+  })
+
+  it('asks to connect GitHub before confirming, then sends thumbs-up with the comment', async () => {
+    findRelatedReports.mockResolvedValue([openReport])
+    confirmOpenReport.mockResolvedValue(undefined)
+    render(<DuplicateCheck card={card} onStart={() => {}} onCancel={() => {}} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: '👍 Still present' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Fake connect' }))
+    await userEvent.type(screen.getByLabelText('Add a short comment (optional)'), 'still there')
+    await userEvent.click(screen.getByRole('button', { name: 'Send confirmation' }))
+
+    expect(confirmOpenReport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 7, 'still there')
+    expect(await screen.findByText(/thanks for confirming/)).toBeInTheDocument()
+  })
+
+  it('shows the error when confirming fails', async () => {
+    token = 'abc'
+    findRelatedReports.mockResolvedValue([openReport])
+    confirmOpenReport.mockRejectedValue(new Error('boom'))
+    render(<DuplicateCheck card={card} onStart={() => {}} onCancel={() => {}} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: '👍 Still present' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Send confirmation' }))
+
+    expect(await screen.findByText(/boom/)).toBeInTheDocument()
+  })
+
+  it('does not offer a thumbs-up on merged reports', async () => {
+    findRelatedReports.mockResolvedValue([mergedReport])
+    render(<DuplicateCheck card={card} onStart={() => {}} onCancel={() => {}} />)
+    expect(await screen.findByText('Merged')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '👍 Still present' })).not.toBeInTheDocument()
   })
 })

@@ -14,7 +14,7 @@ Each can be built and shipped on its own, in any order, once Phase 2's GitHub wr
       token-acquisition path changes.
 6. - [x] Add a checkbox to also search the card on "mythic.tool" database. To the user to see if the card is already fixed on this database.
 
-7. - [ ] **👍/comment flow for existing reports** — lets users confirm or bump a report they find instead of filing a new one,
+7. - [x] **👍/comment flow for existing reports** — lets users confirm or bump a report they find instead of filing a new one,
    per §4.4.
 8. - [ ] **Multi-card wizard**: report the same underlying issue across several cards/languages in one go — e.g. "5 language
    images missing across a single set" — without repeating the full wizard per card. Likely shape:
@@ -43,3 +43,4 @@ them.
 - Item 3: `src/lib/duplicates.ts` + `src/components/DuplicateCheck.tsx`, shown between card lookup and wizard.
 - Item 6: `src/components/MythicToolCheck.tsx`, rendered in `DuplicateCheck` below the known-reports list. The
   mythic.tool search URL (`https://mythic.tool/?q={name}`) is unverified (see `ai/decisions.md`).
+- Item 7: open PRs only (`confirmOpenReport()` — 👍 + optional comment); merged reports have no tracking issue yet.

@@ -15,6 +15,12 @@ const mockOctokit = {
   pulls: {
     create: vi.fn(),
   },
+  reactions: {
+    createForIssue: vi.fn(),
+  },
+  issues: {
+    createComment: vi.fn(),
+  },
 }
 
 vi.mock('@octokit/rest', () => ({
@@ -23,7 +29,8 @@ vi.mock('@octokit/rest', () => ({
   }),
 }))
 
-const { GitHubClientError, buildPrBody, describeGitHubError, submitReport } = await import('./github')
+const { GitHubClientError, buildPrBody, confirmOpenReport, describeGitHubError, submitReport } =
+  await import('./github')
 
 function authWith(token: string | null): GitHubAuth {
   return { getToken: () => token, setToken: vi.fn() }
@@ -220,5 +227,30 @@ describe('describeGitHubError', () => {
   it('falls back to a generic message for a non-Error thrown value', () => {
     const info = describeGitHubError('nope')
     expect(info).toEqual({ message: 'Could not submit to GitHub.', detail: 'nope' })
+  })
+})
+
+describe('confirmOpenReport', () => {
+  const upstream = { owner: 'org', repo: 'scryfix-reports' }
+
+  beforeEach(() => vi.clearAllMocks())
+
+  it('adds a thumbs-up and a comment', async () => {
+    await confirmOpenReport(authWith('token'), upstream, 5, ' still broken ')
+    expect(mockOctokit.reactions.createForIssue).toHaveBeenCalledWith(
+      expect.objectContaining({ issue_number: 5, content: '+1' }),
+    )
+    expect(mockOctokit.issues.createComment).toHaveBeenCalledWith(
+      expect.objectContaining({ issue_number: 5, body: 'still broken' }),
+    )
+  })
+
+  it('skips the comment when empty', async () => {
+    await confirmOpenReport(authWith('token'), upstream, 5, '  ')
+    expect(mockOctokit.issues.createComment).not.toHaveBeenCalled()
+  })
+
+  it('requires sign-in', async () => {
+    await expect(confirmOpenReport(authWith(null), upstream, 5, '')).rejects.toBeInstanceOf(GitHubClientError)
   })
 })

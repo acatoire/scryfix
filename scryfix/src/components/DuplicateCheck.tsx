@@ -3,6 +3,7 @@ import { findRelatedReports, type RelatedReport } from '../lib/duplicates'
 import { UPSTREAM_REPO } from '../lib/github'
 import type { ScryfallCard } from '../lib/scryfall'
 import { WIZARDS } from '../wizard/wizards'
+import MythicToolCheck from './MythicToolCheck'
 
 interface DuplicateCheckProps {
   card: ScryfallCard
@@ -56,6 +57,8 @@ function DuplicateCheck({ card, onStart, onCancel }: DuplicateCheckProps) {
           ))}
         </ul>
       )}
+
+      <MythicToolCheck card={card} />
 
       <label className="wizard-field">
         What kind of problem is it?

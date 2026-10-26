@@ -67,6 +67,18 @@ describe('DuplicateCheck', () => {
     expect(onStart).toHaveBeenCalledWith('other')
   })
 
+  it('offers a mythic.tool search for the card', async () => {
+    findRelatedReports.mockResolvedValue([])
+    render(<DuplicateCheck card={card} onStart={() => {}} onCancel={() => {}} />)
+    await screen.findByText('No existing reports for this card.')
+
+    await userEvent.click(screen.getByLabelText('Also search this card on mythic.tool'))
+    expect(screen.getByRole('link', { name: `Search ${card.name} on mythic.tool` })).toHaveAttribute(
+      'href',
+      `https://mythic.tool/?q=${encodeURIComponent(card.name)}`,
+    )
+  })
+
   it('calls onCancel from Back', async () => {
     findRelatedReports.mockResolvedValue([])
     const onCancel = vi.fn()

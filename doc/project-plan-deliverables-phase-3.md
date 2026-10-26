@@ -12,7 +12,7 @@ Each can be built and shipped on its own, in any order, once Phase 2's GitHub wr
       mandatory sign-in gate, no anonymous PRs). Last step because it's the one piece with an external deploy dependency;
       everything built in steps 2-4 already talks to `api.github.com` directly and needs no rework — only the
       token-acquisition path changes.
-6. - [ ] Add a checkbox to also search the card on "mythic.tool" database. To the user to see if the card is already fixed on this database.
+6. - [x] Add a checkbox to also search the card on "mythic.tool" database. To the user to see if the card is already fixed on this database.
 
 7. - [ ] **👍/comment flow for existing reports** — lets users confirm or bump a report they find instead of filing a new one,
    per §4.4.
@@ -23,7 +23,8 @@ Each can be built and shipped on its own, in any order, once Phase 2's GitHub wr
    or one PR per card generated in a batch (needs a decision once we get there — a single PR is easier to review as "one
    issue", but the current repo layout assumes one issue per folder per PR, so this will need a small schema/flow
    extension).
-9. - [ ] Extend the "mythic.tool" checkbox database to a multiple database compare tool.
+9. - [ ] ~~Extend the "mythic.tool" checkbox database to a multiple database compare tool.~~ (cancelled — the single
+   mythic.tool checkbox from item 6 is enough)
 
 
 Items 1, 2, and 4 are all just new wizard definitions — same JSON-config mechanism from Phase 1 (§5), no new
@@ -40,3 +41,5 @@ them.
 - Items 1, 2, 4: `src/wizard/wizards/` (registry in `index.ts`); new step kinds `text` and `setCode`, and `select`
   now accepts static `options`. `unlisted_printing` fills the report's `unlisted` block (see `ai/decisions.md`).
 - Item 3: `src/lib/duplicates.ts` + `src/components/DuplicateCheck.tsx`, shown between card lookup and wizard.
+- Item 6: `src/components/MythicToolCheck.tsx`, rendered in `DuplicateCheck` below the known-reports list. The
+  mythic.tool search URL (`https://mythic.tool/?q={name}`) is unverified (see `ai/decisions.md`).

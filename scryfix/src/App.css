@@ -38,6 +38,11 @@
   color: #2f855a;
 }
 
+.mythic-tool-check {
+  text-align: left;
+  margin: 1rem 0;
+}
+
 .wizard-duplicate-warning {
   text-align: left;
   border-left: 3px solid #b7791f;

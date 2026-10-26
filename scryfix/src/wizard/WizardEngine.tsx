@@ -14,9 +14,13 @@ interface WizardEngineProps {
   config: WizardConfig
   card: ScryfallCard
   onExit: () => void
+  // When the wizard started (ms epoch) — feeds the minimum-duration anti-spam gate. Defaults to
+  // mount time, i.e. card confirmation.
+  startedAt?: number
 }
 
-function WizardEngine({ config, card, onExit }: WizardEngineProps) {
+function WizardEngine({ config, card, onExit, startedAt }: WizardEngineProps) {
+  const [mountedAt] = useState(() => Date.now())
   const [stepIndex, setStepIndex] = useState(0)
   const [answers, setAnswers] = useState<WizardAnswers>({})
   const [skipped, setSkipped] = useState<Record<string, boolean>>({})
@@ -42,7 +46,14 @@ function WizardEngine({ config, card, onExit }: WizardEngineProps) {
 
   if (done) {
     return (
-      <WizardSummary config={config} card={card} answers={answers} skipped={skipped} onExit={onExit} />
+      <WizardSummary
+        config={config}
+        card={card}
+        answers={answers}
+        skipped={skipped}
+        onExit={onExit}
+        startedAt={startedAt ?? mountedAt}
+      />
     )
   }
 

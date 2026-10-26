@@ -74,3 +74,15 @@ export async function getStatsHistory(upstream: GitHubTarget): Promise<StatsSnap
     return []
   }
 }
+
+// Most recent PR the account opened against the upstream repo — feeds the "minimum delay between
+// submissions" gate (doc/project-plan.md §4.2). Null when the account has none yet.
+export async function getLastPullRequestDate(upstream: GitHubTarget, username: string): Promise<string | null> {
+  const { data } = await octokit.search.issuesAndPullRequests({
+    q: `repo:${upstream.owner}/${upstream.repo} type:pr author:${username}`,
+    sort: 'created',
+    order: 'desc',
+    per_page: 1,
+  })
+  return data.items[0]?.created_at ?? null
+}

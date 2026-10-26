@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "report_id": "408238a5-d393-4433-adf5-bd61fa8ee061",
+  "created_at": "2026-08-09T16:45:49.780Z",
+  "error_type": "missing_image_language",
+  "card": {
+    "set": "war",
+    "collector_number": "184",
+    "scryfall_id": "8eefcc48-a1d2-4f8d-aea2-eecde19eeca2",
+    "name": "Ajani, the Greathearted",
+    "lang": "de",
+    "scryfall_url": "https://scryfall.com/card/war/184/de/ajani-der-gro%C3%9Fherzige-(ajani-the-greathearted)?utm_source=api"
+  },
+  "unlisted": {
+    "is_unlisted": false,
+    "set_code": null,
+    "collector_number_hash": null
+  },
+  "details": {
+    "affected_language": "pt"
+  },
+  "description": "",
+  "evidence": [],
+  "fix_files": [],
+  "external_refs": [],
+  "reporter": {
+    "github_username": "acatoire"
+  },
+  "incomplete": true,
+  "missing": [
+    "fix_files"
+  ]
+}

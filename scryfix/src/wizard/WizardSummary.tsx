@@ -8,14 +8,26 @@ import {
   submissionTooSoonMessage,
   wizardTooFastMessage,
 } from '../lib/antiSpam'
-import { UPSTREAM_REPO, describeGitHubError, submitReport } from '../lib/github'
+import { UPSTREAM_REPO, describeGitHubError, submitReports } from '../lib/github'
 import { getLastPullRequestDate } from '../lib/githubRead'
 import type { ScryfallCard } from '../lib/scryfall'
 import { buildReport } from '../report/buildReport'
 import { downloadReportZip } from '../report/downloadReportZip'
+import type { Report } from '../report/types'
 import { validateReport } from '../report/validateReport'
 import ImageLightbox from './ImageLightbox'
 import type { Attachment, WizardAnswers, WizardConfig } from './types'
+
+export interface BatchEntry {
+  report: Report
+  files: { path: string; file: File }[]
+}
+
+// Answers carried over to the next card of a multi-card report (one shared description/links).
+export interface SharedAnswers {
+  description: string
+  external_refs: string[]
+}
 
 interface WizardSummaryProps {
   config: WizardConfig
@@ -25,6 +37,9 @@ interface WizardSummaryProps {
   onExit: () => void
   // Anti-spam (doc/project-plan.md §4.2): the wizard must have been open for a minimum time.
   startedAt?: number
+  // Reports already queued for the same PR (multi-card report), submitted together with this one.
+  batch?: BatchEntry[]
+  onAddCard?: (entry: BatchEntry, shared: SharedAnswers) => void
 }
 
 function attachmentUrl(attachment: Attachment): string {
@@ -48,7 +63,16 @@ function formatValue(step: WizardConfig['steps'][number], value: WizardAnswers[s
   return urls.length > 0 ? urls.join(', ') : '—'
 }
 
-function WizardSummary({ config, card, answers, skipped, onExit, startedAt = 0 }: WizardSummaryProps) {
+function WizardSummary({
+  config,
+  card,
+  answers,
+  skipped,
+  onExit,
+  startedAt = 0,
+  batch = [],
+  onAddCard,
+}: WizardSummaryProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [githubUsername, setGithubUsername] = useState<string | null>(null)
@@ -97,20 +121,24 @@ function WizardSummary({ config, card, answers, skipped, onExit, startedAt = 0 }
       // Search API unavailable/rate-limited: the gate is a soft, client-side check anyway — don't
       // block a legitimate submission on a failed lookup.
     }
-    const reportToSubmit = { ...report, reporter: { github_username: githubUsername } }
-    const validation = await validateReport(reportToSubmit)
-    if (!validation.valid) {
-      setSubmitError('This report failed schema validation — that is a bug, not something you can fix here.')
-      setSubmitErrorDetail(validation.errors.join('\n'))
-      setSubmitting(false)
-      return
+    const entries: BatchEntry[] = [...batch, { report, files }].map((entry) => ({
+      ...entry,
+      report: { ...entry.report, reporter: { github_username: githubUsername } },
+    }))
+    for (const entry of entries) {
+      const validation = await validateReport(entry.report)
+      if (!validation.valid) {
+        setSubmitError('This report failed schema validation — that is a bug, not something you can fix here.')
+        setSubmitErrorDetail(validation.errors.join('\n'))
+        setSubmitting(false)
+        return
+      }
     }
     try {
-      const result = await submitReport({
+      const result = await submitReports({
         auth: getGitHubAuth(),
         upstream: UPSTREAM_REPO,
-        report: reportToSubmit,
-        files,
+        reports: entries,
       })
       setPrUrl(result.prUrl)
     } catch (err) {
@@ -122,6 +150,16 @@ function WizardSummary({ config, card, answers, skipped, onExit, startedAt = 0 }
     }
   }
 
+  function handleAddCard() {
+    onAddCard?.(
+      { report, files },
+      {
+        description: report.description,
+        external_refs: (answers.external_refs as string[] | undefined) ?? [],
+      },
+    )
+  }
+
   return (
     <div className="wizard wizard-summary">
       <p className="wizard-card-context">
@@ -129,6 +167,14 @@ function WizardSummary({ config, card, answers, skipped, onExit, startedAt = 0 }
         {card.collector_number} · {card.lang}
       </p>
       <h2>Review: {config.title}</h2>
+
+      {batch.length > 0 && (
+        <p className="github-connect-hint">
+          Multi-card report: {batch.length} other card{batch.length > 1 ? 's' : ''} queued (
+          {batch.map((entry) => entry.report.card.name).join(', ')}) — all submitted together in one pull
+          request.
+        </p>
+      )}
 
       {isIncomplete && (
         <p className="wizard-incomplete-banner">
@@ -210,6 +256,11 @@ function WizardSummary({ config, card, answers, skipped, onExit, startedAt = 0 }
         <button type="button" onClick={onExit}>
           Start a new report
         </button>
+        {onAddCard && !prUrl && (
+          <button type="button" onClick={handleAddCard}>
+            Add another card to this report
+          </button>
+        )}
         <button type="button" className="wizard-download" onClick={() => void handleDownload()}>
           Download report (.zip)
         </button>

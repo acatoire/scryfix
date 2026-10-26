@@ -126,4 +126,33 @@ describe('WizardEngine', () => {
     await userEvent.click(nextButton())
     expect(screen.getByText('Step 3 of 6')).toBeInTheDocument()
   })
+
+  it('pre-fills shared answers and forwards the batch and onAddCard to the review screen', async () => {
+    const onAddCard = vi.fn()
+    render(
+      <WizardEngine
+        config={missingImageLanguageWizard}
+        card={card}
+        onExit={() => {}}
+        initialAnswers={{ description: 'shared issue', external_refs: ['https://example.com/a'] }}
+        batch={[]}
+        onAddCard={onAddCard}
+      />,
+    )
+
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'French')
+    await userEvent.click(nextButton())
+    await userEvent.click(screen.getByRole('checkbox'))
+    await userEvent.click(nextButton())
+    await userEvent.click(nextButton())
+    await userEvent.click(nextButton())
+    expect(screen.getByRole('textbox')).toHaveValue('shared issue')
+    await userEvent.click(nextButton())
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add another card to this report' }))
+    expect(onAddCard).toHaveBeenCalledWith(
+      expect.objectContaining({ report: expect.objectContaining({ description: 'shared issue' }) }),
+      { description: 'shared issue', external_refs: ['https://example.com/a'] },
+    )
+  })
 })

@@ -220,6 +220,11 @@ export function describeGitHubError(err: unknown): GitHubErrorInfo {
   return { message: 'Could not submit to GitHub.', detail: String(err) }
 }
 
+export interface SubmittedReport {
+  report: Report
+  files: { path: string; file: File }[]
+}
+
 export interface SubmitReportInput {
   auth: GitHubAuth
   upstream: GitHubTarget
@@ -227,36 +232,59 @@ export interface SubmitReportInput {
   files: { path: string; file: File }[]
 }
 
+export interface SubmitReportsInput {
+  auth: GitHubAuth
+  upstream: GitHubTarget
+  reports: SubmittedReport[]
+}
+
 export interface SubmitReportResult {
   prUrl: string
   prNumber: number
 }
 
-export async function submitReport({
-  auth,
-  upstream,
-  report,
-  files,
-}: SubmitReportInput): Promise<SubmitReportResult> {
+function prTitleFor(reports: Report[]): string {
+  const first = reports[0]
+  if (reports.length === 1) {
+    return `[${first.error_type}] ${first.card.name} (${first.card.set.toUpperCase()} #${first.card.collector_number})`
+  }
+  const names = [...new Set(reports.map((r) => r.card.name))]
+  const summary = names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')}…`
+  return `[${first.error_type}] ${reports.length} cards: ${summary}`
+}
+
+// Multi-card reports: one PR that touches one report folder per card (decision in ai/decisions.md).
+export function buildBatchPrBody(reports: Report[]): string {
+  if (reports.length === 1) return buildPrBody(reports[0])
+  return [
+    `This PR bundles **${reports.length} reports** of the same underlying issue.`,
+    ...reports.flatMap((report) => ['', '---', '', buildPrBody(report)]),
+  ].join('\n')
+}
+
+export async function submitReports({ auth, upstream, reports }: SubmitReportsInput): Promise<SubmitReportResult> {
+  if (reports.length === 0) throw new GitHubClientError('Nothing to submit.')
   const octokit = octokitFor(auth)
 
   const fork = await ensureFork(octokit, upstream)
   const { branch: baseBranch, sha } = await getDefaultBranchSha(octokit, fork)
-  const branch = report.report_id
+  const branch = reports[0].report.report_id
   await createBranch(octokit, fork, branch, sha)
 
-  const basePath = reportBasePath(report)
-  const message = `Add report ${report.report_id} for ${report.card.name}`
-  await commitFile(
-    octokit,
-    fork,
-    branch,
-    `${basePath}/${report.report_id}.json`,
-    stringToBase64(JSON.stringify(report, null, 2)),
-    message,
-  )
-  for (const { path, file } of files) {
-    await commitFile(octokit, fork, branch, `${basePath}/${path}`, await fileToBase64(file), message)
+  for (const { report, files } of reports) {
+    const basePath = reportBasePath(report)
+    const message = `Add report ${report.report_id} for ${report.card.name}`
+    await commitFile(
+      octokit,
+      fork,
+      branch,
+      `${basePath}/${report.report_id}.json`,
+      stringToBase64(JSON.stringify(report, null, 2)),
+      message,
+    )
+    for (const { path, file } of files) {
+      await commitFile(octokit, fork, branch, `${basePath}/${path}`, await fileToBase64(file), message)
+    }
   }
 
   const pr = await openPullRequest(
@@ -265,10 +293,14 @@ export async function submitReport({
     fork,
     baseBranch,
     branch,
-    `[${report.error_type}] ${report.card.name} (${report.card.set.toUpperCase()} #${report.card.collector_number})`,
-    buildPrBody(report),
+    prTitleFor(reports.map((r) => r.report)),
+    buildBatchPrBody(reports.map((r) => r.report)),
   )
   return { prUrl: pr.url, prNumber: pr.number }
+}
+
+export function submitReport({ auth, upstream, report, files }: SubmitReportInput): Promise<SubmitReportResult> {
+  return submitReports({ auth, upstream, reports: [{ report, files }] })
 }
 
 // "+1" on an open report PR (doc/project-plan.md §4.4): a 👍 reaction plus an optional short

@@ -44,12 +44,12 @@ wizard already shipped in Phase 1.
    (`scryfix/schema/report.schema.json` — one JSON Schema (draft 2020-12) for every wizard;
    `additionalProperties: false` on everything except the deliberately-open `details` bag, so
    `src/report/types.ts` and the schema must be edited together. `src/report/validateReport.ts`
-   validates before every submit (`WizardSummary.handleSubmit`, before `submitReport()`) — lazy-loads
+   validates before every submit (`WizardSummary.handleSubmit`, before `submitReports()`) — lazy-loads
    `ajv/dist/2020` the same way `jszip` is lazy-loaded, to keep it out of the main bundle. Concept,
    version-history table, and the "how to evolve it" process: `doc/report-schema.md`.)
 4. - [x] Anti-spam checks from §4.2 (minimum wizard duration, minimum delay between submissions per account).
 
-   (`src/lib/antiSpam.ts` — 60s minimum wizard duration (clock starts when the wizard opens, at card confirmation) and 5min minimum between two PRs of one account, checked in `WizardSummary.handleSubmit` before validation/submit; the last-PR lookup is `getLastPullRequestDate()` in `githubRead.ts` (Search API). A failed lookup does not block submitting — soft client-side gate only.)
+   (`src/lib/antiSpam.ts` — 60s minimum wizard duration (clock starts at card confirmation, kept across a multi-card batch) and 5min minimum between two PRs of one account, checked in `WizardSummary.handleSubmit` before validation/submit; the last-PR lookup is `getLastPullRequestDate()` in `githubRead.ts` (Search API). A failed lookup does not block submitting — soft client-side gate only.)
 
    Pulled via the GitHub API (Search API for PR counts, Contents/Trees API or a small scheduled GitHub Action that
    snapshots repo size into a tracked JSON file, since size isn't directly queryable per-commit via the REST API alone).
